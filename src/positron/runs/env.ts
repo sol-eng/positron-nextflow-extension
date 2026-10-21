@@ -78,7 +78,7 @@ async function resolve(): Promise<RunEnvironment> {
     problems.push("Nextflow was not found.");
   }
 
-  const eventsPlugin = runSetting("eventsPlugin", "nf-workbench@0.1.0");
+  const eventsPlugin = runSetting("eventsPlugin", "nf-workbench@0.2.0");
   return {
     nextflow,
     version,

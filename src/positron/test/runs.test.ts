@@ -205,7 +205,7 @@ test("builds the run command line", () => {
   const files = runFiles("/p", "main-1");
   const args = buildRunArgs(config, files, "main-1", [
     "nf-schema@2.5.1",
-    "nf-workbench@0.1.0"
+    "nf-workbench@0.2.0"
   ]);
   assert.deepEqual(args.slice(0, 6), [
     "-log",
@@ -219,7 +219,7 @@ test("builds the run command line", () => {
   assert.equal(after("-profile"), "test,docker");
   assert.equal(after("--input"), "samples sheet.csv");
   assert.equal(after("-resume"), "abc");
-  assert.equal(after("-plugins"), "nf-schema@2.5.1,nf-workbench@0.1.0");
+  assert.equal(after("-plugins"), "nf-schema@2.5.1,nf-workbench@0.2.0");
   assert.equal(after("-c"), "/p/.nextflow/positron/main-1/positron.config");
   assert.equal(args.at(-1), "-stub");
 });
@@ -238,12 +238,12 @@ test("builds the run config with escaped Groovy strings", () => {
 });
 
 test("adds the events plugin unless the pipeline declares it", () => {
-  assert.deepEqual(mergePlugins(["nf-schema@2.5.1"], "nf-workbench@0.1.0"), [
+  assert.deepEqual(mergePlugins(["nf-schema@2.5.1"], "nf-workbench@0.2.0"), [
     "nf-schema@2.5.1",
-    "nf-workbench@0.1.0"
-  ]);
-  assert.deepEqual(mergePlugins(["nf-workbench@0.2.0"], "nf-workbench@0.1.0"), [
     "nf-workbench@0.2.0"
+  ]);
+  assert.deepEqual(mergePlugins(["nf-workbench@0.3.0"], "nf-workbench@0.2.0"), [
+    "nf-workbench@0.3.0"
   ]);
 });
 
