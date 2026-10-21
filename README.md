@@ -1,4 +1,22 @@
-# Nextflow extension for Visual Studio Code
+# Nextflow extension for Positron
+
+A fork of the [Nextflow extension for VS Code](https://github.com/nextflow-io/vscode-language-nextflow) with additions for [Positron](https://positron.posit.co/). Everything below the Positron section is upstream's documentation and applies unchanged.
+
+## Positron
+
+In Positron the extension adds:
+
+- **Run R and Python process scripts in the console.** Inside a process script that starts with an `Rscript` or `python` shebang, press <kbd>Cmd/Ctrl</kbd>+<kbd>Enter</kbd> to run the current line or selection, or <kbd>Cmd/Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Enter</kbd> to run the whole script. The shebang is skipped and Nextflow string escapes such as `\$` are undone. Nextflow variables like `${x}` are sent as written, so define them in the console first.
+- **Open in Data Explorer.** Right-click a trace file (`execution_trace_*.txt`) or a CSV/TSV file such as a samplesheet and choose **Open in Data Explorer**. Trace files are opened as a snapshot; open them again to see a running pipeline's progress.
+- **Seqera Cloud login with an access token.** The browser login returns to VS Code rather than Positron, so the login asks for a [personal access token](https://cloud.seqera.io/tokens) instead.
+
+In VS Code the extension behaves like upstream.
+
+The extension ID is `posit.positron-nextflow`. It contributes the same languages, settings and commands as the official `nextflow.nextflow` extension, so it stays inactive, and offers to uninstall the official extension, while both are installed.
+
+To install, build the VSIX with `make` and install `build/positron-nextflow.vsix`, or run `make install`.
+
+---
 
 VS Code extension for [Nextflow](https://www.nextflow.io/) that provides language support for Nextflow scripts and config files.
 

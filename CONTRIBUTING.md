@@ -47,6 +47,24 @@ Everything outside `src/ui` runs in the extension host, which is a Node process 
 
 A webview cannot import `vscode` no matter how the project is arranged. To reach the extension host, including for logging, post a message and handle it in `WebviewProvider`.
 
+## Working on the Positron fork
+
+This repository is a fork of [nextflow-io/vscode-language-nextflow](https://github.com/nextflow-io/vscode-language-nextflow), tracked as the `upstream` remote. To keep upstream merges easy:
+
+- Put Positron-specific code in `src/positron/`, which is the only place that touches the Positron API.
+- Keep changes to upstream files to small hooks marked with a `// Positron:` comment.
+- Detect Positron with `isPositron()` from `src/positron`. It uses the `acquirePositronApi` global that Positron injects, so `@posit-dev/positron` is only used for types. Gate Positron-only contributions in `package.json` with the `isPositron` context key.
+
+Run the unit tests for `src/positron` with `npm run test:positron`, and build and install into Positron with `make install`. `make test` launches Positron with the extension loaded; set `EDITOR_CLI` to use another editor.
+
+To bring in an upstream release, merge it on a branch rather than rebasing:
+
+```bash
+git fetch upstream --tags
+git checkout -b merge/upstream-v1.9.0
+git merge v1.9.0
+```
+
 ## Publishing
 
 1. Update the extension version number in `package.json`.
