@@ -6,11 +6,11 @@
   "publisher": "posit",
   "repository": {
     "type": "git",
-    "url": "https://github.com/posit-dev/positron-nextflow-extension.git"
+    "url": "https://github.com/michaelmayer2/positron-nextflow-extension.git"
   },
   "homepage": "https://nextflow.io",
   "bugs": {
-    "url": "https://github.com/posit-dev/positron-nextflow-extension/issues"
+    "url": "https://github.com/michaelmayer2/positron-nextflow-extension/issues"
   },
   "icon": "images/nextflow-icon-128x128.png",
   "keywords": [
