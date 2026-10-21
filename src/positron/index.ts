@@ -5,6 +5,8 @@ import type { PositronApi } from "@posit-dev/positron";
 
 import { activateDataExplorer } from "./dataExplorer";
 import { activateRunEmbeddedCode } from "./runEmbeddedCode";
+import { activateRuns } from "./runs";
+import { activateReports } from "./runs/reports";
 
 export { hasConflictingExtension } from "./conflict";
 export { promptForAccessToken } from "./auth";
@@ -36,4 +38,5 @@ export function activatePositron(context: vscode.ExtensionContext) {
   if (!api) return;
   activateRunEmbeddedCode(context, api);
   activateDataExplorer(context);
+  activateReports(context, api, activateRuns(context));
 }

@@ -1,0 +1,4 @@
+task_id	hash	native_id	name	status	exit	submit	duration	realtime	%cpu	peak_rss	peak_vmem	rchar	wchar
+1	95/87bc2f	50903	generate	COMPLETED	0	2026-10-21 22:23:57.593	126ms	34ms	-	-	-	-	-
+2	7c/fe4a11	50928	square	COMPLETED	0	2026-10-21 22:23:57.736	130ms	33ms	-	-	-	-	-
+3	49/a26581	50955	sum_squares	COMPLETED	0	2026-10-21 22:23:57.873	133ms	33ms	-	-	-	-	-

@@ -1,0 +1,1 @@
+2026-10-21 22:26:03	1.1s	exotic_hypatia	OK	894b3faaaf9079edb35c5750295ef86b	e13c8468-17f9-45fb-abf9-c9990d6a9278	nextflow -log nf2.log run main.nf -plugins nf-workbench@0.1.0 -c p2.config -ansi-log false

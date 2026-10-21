@@ -207,6 +207,118 @@
         "title": "Open in Data Explorer",
         "category": "Nextflow",
         "icon": "$(table)"
+      },
+      {
+        "command": "nextflow.positron.runs.run",
+        "title": "Run Pipeline...",
+        "category": "Nextflow",
+        "icon": "$(play)"
+      },
+      {
+        "command": "nextflow.positron.runs.runAgain",
+        "title": "Run Again",
+        "category": "Nextflow",
+        "icon": "$(debug-restart)"
+      },
+      {
+        "command": "nextflow.positron.runs.resume",
+        "title": "Resume",
+        "category": "Nextflow",
+        "icon": "$(debug-continue)"
+      },
+      {
+        "command": "nextflow.positron.runs.stop",
+        "title": "Stop Run",
+        "category": "Nextflow",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "nextflow.positron.runs.kill",
+        "title": "Force Kill Run",
+        "category": "Nextflow",
+        "icon": "$(close)"
+      },
+      {
+        "command": "nextflow.positron.runs.clean",
+        "title": "Clean Work Directories",
+        "category": "Nextflow",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "nextflow.positron.runs.showOutput",
+        "title": "Show Run Output",
+        "category": "Nextflow",
+        "icon": "$(output)"
+      },
+      {
+        "command": "nextflow.positron.runs.openLog",
+        "title": "Open .nextflow.log",
+        "category": "Nextflow",
+        "icon": "$(file)"
+      },
+      {
+        "command": "nextflow.positron.runs.remove",
+        "title": "Remove from List",
+        "category": "Nextflow",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "nextflow.positron.runs.cancelTask",
+        "title": "Cancel Task",
+        "category": "Nextflow",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "nextflow.positron.runs.showTaskFiles",
+        "title": "Show Task Files...",
+        "category": "Nextflow",
+        "icon": "$(files)"
+      },
+      {
+        "command": "nextflow.positron.runs.copyWorkDir",
+        "title": "Copy Work Directory Path",
+        "category": "Nextflow",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "nextflow.positron.runs.refresh",
+        "title": "Refresh Pipeline Runs",
+        "category": "Nextflow",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "nextflow.positron.runs.diagnostics",
+        "title": "Show Run Diagnostics",
+        "category": "Nextflow"
+      },
+      {
+        "command": "nextflow.positron.runs.installNextflow",
+        "title": "Install Nextflow",
+        "category": "Nextflow"
+      },
+      {
+        "command": "nextflow.positron.runs.openReport",
+        "title": "Open Report",
+        "category": "Nextflow",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "nextflow.positron.runs.openTimeline",
+        "title": "Open Timeline",
+        "category": "Nextflow",
+        "icon": "$(history)"
+      },
+      {
+        "command": "nextflow.positron.runs.openDag",
+        "title": "Open DAG",
+        "category": "Nextflow",
+        "icon": "$(type-hierarchy)"
+      },
+      {
+        "command": "nextflow.positron.runs.openTrace",
+        "title": "Open Trace in Data Explorer",
+        "category": "Nextflow",
+        "icon": "$(table)"
       }
     ],
     "keybindings": [
@@ -244,6 +356,82 @@
         {
           "command": "nextflow.positron.openInDataExplorer",
           "when": "isPositron && resourceFilename =~ /(trace.*\\.txt|\\.(csv|tsv))$/i"
+        },
+        {
+          "command": "nextflow.positron.runs.runAgain",
+          "when": "false"
+        },
+        {
+          "command": "nextflow.positron.runs.resume",
+          "when": "false"
+        },
+        {
+          "command": "nextflow.positron.runs.cancelTask",
+          "when": "false"
+        },
+        {
+          "command": "nextflow.positron.runs.showTaskFiles",
+          "when": "false"
+        },
+        {
+          "command": "nextflow.positron.runs.copyWorkDir",
+          "when": "false"
+        },
+        {
+          "command": "nextflow.positron.runs.remove",
+          "when": "false"
+        },
+        {
+          "command": "nextflow.positron.runs.clean",
+          "when": "false"
+        },
+        {
+          "command": "nextflow.positron.runs.openLog",
+          "when": "false"
+        },
+        {
+          "command": "nextflow.positron.runs.run",
+          "when": "isPositron"
+        },
+        {
+          "command": "nextflow.positron.runs.stop",
+          "when": "isPositron"
+        },
+        {
+          "command": "nextflow.positron.runs.kill",
+          "when": "isPositron"
+        },
+        {
+          "command": "nextflow.positron.runs.showOutput",
+          "when": "isPositron"
+        },
+        {
+          "command": "nextflow.positron.runs.refresh",
+          "when": "isPositron"
+        },
+        {
+          "command": "nextflow.positron.runs.diagnostics",
+          "when": "isPositron"
+        },
+        {
+          "command": "nextflow.positron.runs.installNextflow",
+          "when": "isPositron"
+        },
+        {
+          "command": "nextflow.positron.runs.openReport",
+          "when": "false"
+        },
+        {
+          "command": "nextflow.positron.runs.openTimeline",
+          "when": "false"
+        },
+        {
+          "command": "nextflow.positron.runs.openDag",
+          "when": "false"
+        },
+        {
+          "command": "nextflow.positron.runs.openTrace",
+          "when": "false"
         }
       ],
       "editor/context": [
@@ -287,6 +475,135 @@
           "command": "nextflow.seqera.goToCloud",
           "when": "view == seqeraCloud && nextflow.isLoggedIn == true",
           "group": "navigation@10"
+        },
+        {
+          "command": "nextflow.positron.runs.run",
+          "when": "view == nextflow.runs",
+          "group": "navigation@1"
+        },
+        {
+          "command": "nextflow.positron.runs.refresh",
+          "when": "view == nextflow.runs",
+          "group": "navigation@2"
+        },
+        {
+          "command": "nextflow.positron.runs.diagnostics",
+          "when": "view == nextflow.runs",
+          "group": "more@1"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "nextflow.positron.runs.stop",
+          "when": "view == nextflow.runs && viewItem =~ /^run\\.(starting|running)$/",
+          "group": "inline@1"
+        },
+        {
+          "command": "nextflow.positron.runs.showOutput",
+          "when": "view == nextflow.runs && viewItem =~ /^run\\./",
+          "group": "inline@2"
+        },
+        {
+          "command": "nextflow.positron.runs.runAgain",
+          "when": "view == nextflow.runs && viewItem =~ /^run\\.(succeeded|failed|stopped|lost)$/",
+          "group": "inline@0"
+        },
+        {
+          "command": "nextflow.positron.runs.resume",
+          "when": "view == nextflow.runs && viewItem =~ /^run\\.(succeeded|failed|stopped|lost)$/",
+          "group": "inline@1"
+        },
+        {
+          "command": "nextflow.positron.runs.stop",
+          "when": "view == nextflow.runs && viewItem =~ /^run\\.(starting|running)$/",
+          "group": "1_run@1"
+        },
+        {
+          "command": "nextflow.positron.runs.kill",
+          "when": "view == nextflow.runs && viewItem =~ /^run\\.(starting|running)$/",
+          "group": "1_run@2"
+        },
+        {
+          "command": "nextflow.positron.runs.runAgain",
+          "when": "view == nextflow.runs && viewItem =~ /^run\\.(succeeded|failed|stopped|lost)$/",
+          "group": "1_run@3"
+        },
+        {
+          "command": "nextflow.positron.runs.resume",
+          "when": "view == nextflow.runs && viewItem =~ /^run\\.(succeeded|failed|stopped|lost)$/",
+          "group": "1_run@4"
+        },
+        {
+          "command": "nextflow.positron.runs.showOutput",
+          "when": "view == nextflow.runs && viewItem =~ /^run\\./",
+          "group": "2_files@1"
+        },
+        {
+          "command": "nextflow.positron.runs.openLog",
+          "when": "view == nextflow.runs && viewItem =~ /^run\\./",
+          "group": "2_files@2"
+        },
+        {
+          "command": "nextflow.positron.runs.clean",
+          "when": "view == nextflow.runs && viewItem =~ /^run\\.(succeeded|failed|stopped|lost)$/",
+          "group": "3_manage@1"
+        },
+        {
+          "command": "nextflow.positron.runs.remove",
+          "when": "view == nextflow.runs && viewItem =~ /^run\\.(succeeded|failed|stopped|lost)$/",
+          "group": "3_manage@2"
+        },
+        {
+          "command": "nextflow.positron.runs.cancelTask",
+          "when": "view == nextflow.runs && viewItem =~ /^task\\.(submitted|running)/",
+          "group": "inline@1"
+        },
+        {
+          "command": "nextflow.positron.runs.showTaskFiles",
+          "when": "view == nextflow.runs && viewItem =~ /^task\\..*\\.workdir$/",
+          "group": "1_task@1"
+        },
+        {
+          "command": "nextflow.positron.runs.copyWorkDir",
+          "when": "view == nextflow.runs && viewItem =~ /^task\\..*\\.workdir$/",
+          "group": "1_task@2"
+        },
+        {
+          "command": "nextflow.positron.runs.cancelTask",
+          "when": "view == nextflow.runs && viewItem =~ /^task\\.(submitted|running)/",
+          "group": "2_manage@1"
+        },
+        {
+          "command": "nextflow.positron.runs.openReport",
+          "when": "view == nextflow.runs && viewItem =~ /^run\\.(succeeded|failed|stopped|lost)$/",
+          "group": "inline@2"
+        },
+        {
+          "command": "nextflow.positron.runs.openReport",
+          "when": "view == nextflow.runs && viewItem =~ /^run\\.(succeeded|failed|stopped|lost)$/",
+          "group": "2_reports@1"
+        },
+        {
+          "command": "nextflow.positron.runs.openTimeline",
+          "when": "view == nextflow.runs && viewItem =~ /^run\\.(succeeded|failed|stopped|lost)$/",
+          "group": "2_reports@2"
+        },
+        {
+          "command": "nextflow.positron.runs.openDag",
+          "when": "view == nextflow.runs && viewItem =~ /^run\\.(succeeded|failed|stopped|lost)$/",
+          "group": "2_reports@3"
+        },
+        {
+          "command": "nextflow.positron.runs.openTrace",
+          "when": "view == nextflow.runs && viewItem =~ /^run\\./",
+          "group": "2_reports@4"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "nextflow.positron.runs.run",
+          "when": "isPositron && resourceLangId == nextflow && resourceFilename =~ /\\.nf$/",
+          "group": "navigation@0"
         }
       ]
     },
@@ -410,6 +727,34 @@
           "type": "boolean",
           "default": true,
           "markdownDescription": "Remove ANSI escape codes (e.g. `\\u001b[0;32m`) from `.nextflow.log` files when filtering is enabled. The file on disk is unchanged. Can be toggled per-file in the editor title bar."
+        },
+        "nextflow.run.executable": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Path to the `nextflow` executable used to run pipelines in Positron. By default it is found on the `PATH` or in `~/.local/bin`."
+        },
+        "nextflow.run.extraArgs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "markdownDescription": "Extra arguments added to every `nextflow run` started from Positron, e.g. `[\"-with-tower\"]`."
+        },
+        "nextflow.run.eventsPlugin": {
+          "type": "string",
+          "default": "nf-workbench@0.1.0",
+          "markdownDescription": "The Nextflow plugin, with version, that writes live run events (`workbench.eventsFile`). Without it only completed tasks are shown."
+        },
+        "nextflow.run.launcherCli": {
+          "type": "string",
+          "default": "posit-workbench-nf-launcher",
+          "markdownDescription": "The Posit Workbench launcher CLI, used to list clusters and cancel task jobs."
+        },
+        "nextflow.run.confirm": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Ask for confirmation before force killing a run, cancelling a task, deleting work directories, or removing a run from the list."
         }
       }
     },
@@ -424,6 +769,12 @@
     },
     "views": {
       "nextflow": [
+        {
+          "id": "nextflow.runs",
+          "name": "Pipeline Runs",
+          "type": "tree",
+          "when": "isPositron"
+        },
         {
           "id": "project",
           "name": "Project",
@@ -440,7 +791,13 @@
           "type": "tree"
         }
       ]
-    }
+    },
+    "viewsWelcome": [
+      {
+        "view": "nextflow.runs",
+        "contents": "No pipeline runs yet.\n[Run Pipeline](command:nextflow.positron.runs.run)\nNextflow not installed? [Install Nextflow](command:nextflow.positron.runs.installNextflow) or [show diagnostics](command:nextflow.positron.runs.diagnostics)."
+      }
+    ]
   },
   "scripts": {
     "check-types": "tsc --noEmit && tsc --noEmit -p tsconfig.ui.json",
