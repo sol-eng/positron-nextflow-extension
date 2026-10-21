@@ -26,6 +26,20 @@ const SHEBANGS: [RegExp, EmbeddedLanguage][] = [
 
 const TRIPLE_QUOTE = /"""/g;
 
+/** The language of a script's shebang line, if it is R or Python. */
+export function shebangLanguage(line: string): EmbeddedLanguage | undefined {
+  return SHEBANGS.find(([re]) => re.test(line))?.[1];
+}
+
+/** Console code that makes `dir` the working directory. */
+export function chdirCode(language: EmbeddedLanguage, dir: string): string {
+  // a JSON string literal is also a valid R and Python string literal
+  const quoted = JSON.stringify(dir);
+  return language === "r"
+    ? `setwd(${quoted})`
+    : `import os; os.chdir(${quoted})`;
+}
+
 /**
  * Find the R or Python script block that contains `line`. A block is a
  * `"""` string whose first non-blank line is an R or Python shebang.
@@ -61,7 +75,7 @@ function blockLanguage(
 ): EmbeddedLanguage | undefined {
   for (let i = openLine + 1; i < closeLine; i++) {
     if (lines[i].trim() === "") continue;
-    return SHEBANGS.find(([re]) => re.test(lines[i]))?.[1];
+    return shebangLanguage(lines[i]);
   }
   return undefined;
 }

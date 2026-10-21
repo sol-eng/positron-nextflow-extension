@@ -71,7 +71,7 @@ async function execute(
  * Right after startup Positron may still be discovering interpreters, and
  * executeCode fails until one is registered for the language.
  */
-async function waitForRuntime(
+export async function waitForRuntime(
   api: PositronApi,
   languageId: string,
   timeoutMs = 30000

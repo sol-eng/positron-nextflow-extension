@@ -14,6 +14,8 @@ import {
 } from "./utils/fetchLanguageServer";
 import { findJava, checkJavaVersion } from "./utils/findExecutable";
 import type { TrackEvent } from "../telemetry";
+// Positron:
+import { previewDagInViewer } from "../positron/dagPreview";
 
 const LABEL_RELOAD_WINDOW = "Reload Window";
 
@@ -142,6 +144,8 @@ async function previewDag(
     return;
   }
   const content = res.result;
+  // Positron: show the DAG in the Viewer pane
+  if (previewDagInViewer(context, content, name ?? "Entry")) return;
   const panel = vscode.window.createWebviewPanel(
     "dag-preview",
     "DAG Preview",

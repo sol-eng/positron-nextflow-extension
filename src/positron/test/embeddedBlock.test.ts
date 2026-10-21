@@ -1,7 +1,13 @@
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
 
-import { blockBody, findEmbeddedBlock, toRunnableCode } from "../embeddedBlock";
+import {
+  blockBody,
+  chdirCode,
+  findEmbeddedBlock,
+  shebangLanguage,
+  toRunnableCode
+} from "../embeddedBlock";
 
 const script = `process PLOT {
     input:
@@ -74,4 +80,15 @@ test("flags Nextflow interpolation", () => {
   assert.equal(toRunnableCode('read.csv("${counts}")').hasInterpolation, true);
   assert.equal(toRunnableCode("cat $counts").hasInterpolation, true);
   assert.equal(toRunnableCode("cost <- 5 * 2").hasInterpolation, false);
+});
+
+test("recognises task script shebangs", () => {
+  assert.equal(shebangLanguage("#!/usr/bin/env Rscript"), "r");
+  assert.equal(shebangLanguage("#!/usr/bin/env python3.12"), "python");
+  assert.equal(shebangLanguage("#!/bin/bash -ue"), undefined);
+});
+
+test("quotes the work directory for the console", () => {
+  assert.equal(chdirCode("r", '/w/a "b"\\c'), 'setwd("/w/a \\"b\\"\\\\c")');
+  assert.equal(chdirCode("python", "/w/x"), 'import os; os.chdir("/w/x")');
 });

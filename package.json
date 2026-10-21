@@ -319,6 +319,12 @@
         "title": "Open Trace in Data Explorer",
         "category": "Nextflow",
         "icon": "$(table)"
+      },
+      {
+        "command": "nextflow.positron.runs.debugTask",
+        "title": "Debug Task in Console",
+        "category": "Nextflow",
+        "icon": "$(debug-console)"
       }
     ],
     "keybindings": [
@@ -431,6 +437,10 @@
         },
         {
           "command": "nextflow.positron.runs.openTrace",
+          "when": "false"
+        },
+        {
+          "command": "nextflow.positron.runs.debugTask",
           "when": "false"
         }
       ],
@@ -597,6 +607,16 @@
           "command": "nextflow.positron.runs.openTrace",
           "when": "view == nextflow.runs && viewItem =~ /^run\\./",
           "group": "2_reports@4"
+        },
+        {
+          "command": "nextflow.positron.runs.debugTask",
+          "when": "view == nextflow.runs && viewItem =~ /^task\\..*\\.workdir$/",
+          "group": "inline@0"
+        },
+        {
+          "command": "nextflow.positron.runs.debugTask",
+          "when": "view == nextflow.runs && viewItem =~ /^task\\..*\\.workdir$/",
+          "group": "1_task@0"
         }
       ],
       "editor/title": [
