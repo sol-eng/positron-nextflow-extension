@@ -1,3 +1,5 @@
+EDITOR_CLI ?= $(shell command -v positron || echo /Applications/Positron.app/Contents/Resources/app/bin/code)
+
 all: clean package
 
 clean:
@@ -13,7 +15,7 @@ package:
 	npm run package
 
 test: compile
-	code --extensionDevelopmentPath=$(PWD)/build
+	"$(EDITOR_CLI)" --extensionDevelopmentPath=$(PWD)/build
 
 install: all
-	code --install-extension build/nextflow.vsix
+	"$(EDITOR_CLI)" --install-extension build/positron-nextflow.vsix

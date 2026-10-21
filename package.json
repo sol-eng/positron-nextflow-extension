@@ -1,16 +1,16 @@
 {
-  "name": "nextflow",
-  "displayName": "Nextflow",
-  "description": "Nextflow language support",
-  "version": "1.8.0",
-  "publisher": "nextflow",
+  "name": "positron-nextflow",
+  "displayName": "Positron Nextflow",
+  "description": "Nextflow language support, extended for Positron",
+  "version": "0.1.0",
+  "publisher": "posit",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nextflow-io/vscode-language-nextflow.git"
+    "url": "https://github.com/posit-dev/positron-nextflow-extension.git"
   },
   "homepage": "https://nextflow.io",
   "bugs": {
-    "url": "https://github.com/nextflow-io/vscode-language-nextflow/issues"
+    "url": "https://github.com/posit-dev/positron-nextflow-extension/issues"
   },
   "icon": "images/nextflow-icon-128x128.png",
   "keywords": [
@@ -375,12 +375,14 @@
   "scripts": {
     "check-types": "tsc --noEmit && tsc --noEmit -p tsconfig.ui.json",
     "compile": "rm -rf build && npm run check-types && node esbuild.js",
-    "package": "rm -rf build && npm run check-types && node esbuild.js --production && (cd build ; vsce package -o nextflow.vsix)",
+    "package": "rm -rf build && npm run check-types && node esbuild.js --production && (cd build ; vsce package -o positron-nextflow.vsix)",
     "test:syntax": "node syntaxes/highlight.test.js",
+    "test:positron": "esbuild src/positron/test/*.test.ts --bundle --platform=node --format=cjs --outdir=build-test --log-level=warning && node --test build-test/",
     "lint": "eslint ."
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",
+    "@posit-dev/positron": "^0.2.12",
     "@types/node": "^20",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
