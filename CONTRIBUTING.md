@@ -55,6 +55,8 @@ This repository is a fork of [nextflow-io/vscode-language-nextflow](https://gith
 - Keep changes to upstream files to small hooks marked with a `// Positron:` comment.
 - Detect Positron with `isPositron()` from `src/positron`. It uses the `acquirePositronApi` global that Positron injects, so `@posit-dev/positron` is only used for types. Gate Positron-only contributions in `package.json` with the `isPositron` context key.
 
+The run manager lives in `src/positron/runs/`. Its pure parts (the event reducer, trace and history parsing, and command-line building in `model.ts`, `events.ts`, `trace.ts` and `launchArgs.ts`) are kept free of `vscode`, and are tested against output captured from real Nextflow runs in `src/positron/test/fixtures/`. Live status comes from the events file written by the `nf-workbench` plugin (`workbench.eventsFile`, in [posit-sdk-nextflow](https://github.com/michaelmayer2/posit-sdk-nextflow)). Changes to the event format need a matching change there.
+
 Run the unit tests for `src/positron` with `npm run test:positron`, and build and install into Positron with `make install`. `make test` launches Positron with the extension loaded; set `EDITOR_CLI` to use another editor.
 
 To bring in an upstream release, merge it on a branch rather than rebasing:

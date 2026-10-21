@@ -6,6 +6,14 @@ A fork of the [Nextflow extension for VS Code](https://github.com/nextflow-io/vs
 
 In Positron the extension adds:
 
+- **Run and manage pipelines.** The **Pipeline Runs** view in the Nextflow sidebar runs a pipeline (the ▶ button on a `.nf` file, or **Nextflow: Run Pipeline...**), asking for the profiles, parameters and, when the pipeline uses the [nf-workbench](https://github.com/michaelmayer2/posit-sdk-nextflow) executor, the Posit Workbench cluster and resource profile. It then follows the run live, per process and task.
+  - **Stop** a run (Nextflow cancels its tasks, including Workbench jobs), **Force Kill** it, **Resume** it from its cached tasks, **Run Again**, or **Clean** its work directories.
+  - **Cancel** a single task, open the files in its work directory, or **Debug Task in Console**. This sets the R or Python console's working directory to the task's work directory, where its inputs are staged, and opens the task's resolved script, with Nextflow variables substituted, to step through.
+  - Open a run's report, timeline and DAG in the Viewer, and its trace in the Data Explorer.
+  - Runs keep going when the window is reloaded or closed, and are picked up again by the next window. Each run's logs and reports are in `.nextflow/positron/<run name>/` under its launch directory. A run inside a Workbench session stops when the session is suspended.
+  - Live task status needs the `nf-workbench` plugin (0.1.0 or later, with `workbench.eventsFile`), which the extension loads for every run, whatever the executor. Without it, only completed tasks are shown. **Nextflow: Show Run Diagnostics** shows what the extension found: Nextflow, Java, the plugin, and the Workbench launcher CLI's credentials.
+- **Positron Assistant tools.** The Assistant can list runs, explain why a run failed (from each failed task's stderr), and launch or stop a run after you confirm.
+- **DAG preview in the Viewer.** The workflow DAG preview opens in the Viewer pane instead of an editor tab.
 - **Run R and Python process scripts in the console.** Inside a process script that starts with an `Rscript` or `python` shebang, press <kbd>Cmd/Ctrl</kbd>+<kbd>Enter</kbd> to run the current line or selection, or <kbd>Cmd/Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Enter</kbd> to run the whole script. The shebang is skipped and Nextflow string escapes such as `\$` are undone. Nextflow variables like `${x}` are sent as written, so define them in the console first.
 - **Open in Data Explorer.** Right-click a trace file (`execution_trace_*.txt`) or a CSV/TSV file such as a samplesheet and choose **Open in Data Explorer**. Trace files are opened as a snapshot; open them again to see a running pipeline's progress.
 - **Seqera Cloud login with an access token.** The browser login returns to VS Code rather than Positron, so the login asks for a [personal access token](https://cloud.seqera.io/tokens) instead.
@@ -14,7 +22,7 @@ In VS Code the extension behaves like upstream.
 
 The extension ID is `posit.positron-nextflow`. It contributes the same languages, settings and commands as the official `nextflow.nextflow` extension, so it stays inactive, and offers to uninstall the official extension, while both are installed.
 
-To install, build the VSIX with `make` and install `build/positron-nextflow.vsix`, or run `make install`.
+To install, build the VSIX with `make` and install `build/positron-nextflow.vsix`, or run `make install`. Running pipelines needs Nextflow 25.10 or later; **Nextflow: Install Nextflow** installs it into `~/.local/bin`. Settings for runs are under `nextflow.run.*`.
 
 ---
 
