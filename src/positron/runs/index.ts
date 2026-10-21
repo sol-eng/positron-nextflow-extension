@@ -28,8 +28,7 @@ import { isActive, RunStore, type Run } from "./store";
 import { parseHistory } from "./trace";
 import { RunsTreeProvider, runDuration, type RunNode } from "./tree";
 
-export { RunStore } from "./store";
-export type { Run } from "./store";
+export type { Run, RunStore } from "./store";
 
 const SUSPEND_WARNING_KEY = "nextflow.positron.warnedAboutSuspend";
 
@@ -343,7 +342,7 @@ async function launch(
   return run;
 }
 
-function stopRun(store: RunStore, run: Run) {
+export function stopRun(store: RunStore, run: Run) {
   run.record.stopRequested = "stop";
   store.save(run);
   signalRun(run.record, "SIGTERM");

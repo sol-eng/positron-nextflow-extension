@@ -817,6 +817,126 @@
         "view": "nextflow.runs",
         "contents": "No pipeline runs yet.\n[Run Pipeline](command:nextflow.positron.runs.run)\nNextflow not installed? [Install Nextflow](command:nextflow.positron.runs.installNextflow) or [show diagnostics](command:nextflow.positron.runs.diagnostics)."
       }
+    ],
+    "languageModelTools": [
+      {
+        "name": "nextflow_listRuns",
+        "displayName": "List Nextflow Runs",
+        "toolReferenceName": "nextflowRuns",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(list-tree)",
+        "userDescription": "List the Nextflow pipeline runs started in this workspace.",
+        "modelDescription": "List the Nextflow pipeline runs started from Positron in this workspace, most recent first, with their status (starting, running, succeeded, failed, stopped, lost), entry script, profiles, start and end times, and task totals.",
+        "tags": [
+          "positron-assistant",
+          "requires-workspace",
+          "nextflow"
+        ],
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        },
+        "when": "isPositron"
+      },
+      {
+        "name": "nextflow_runStatus",
+        "displayName": "Nextflow Run Status",
+        "toolReferenceName": "nextflowRunStatus",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(pulse)",
+        "userDescription": "Show the status of a Nextflow run, including why tasks failed.",
+        "modelDescription": "Get the detailed status of one Nextflow pipeline run: per-process task counts, Nextflow's error report, the tasks still running with their job ids, and every failed task with its exit code, work directory and the last lines of its stderr (.command.err). Use this to explain why a run failed.",
+        "tags": [
+          "positron-assistant",
+          "requires-workspace",
+          "nextflow"
+        ],
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "runName": {
+              "type": "string",
+              "description": "Name of the run, as listed by nextflow_listRuns. Defaults to the most recent run."
+            }
+          }
+        },
+        "when": "isPositron"
+      },
+      {
+        "name": "nextflow_launchPipeline",
+        "displayName": "Launch Nextflow Pipeline",
+        "toolReferenceName": "nextflowLaunch",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(play)",
+        "userDescription": "Start a Nextflow pipeline run, after confirmation.",
+        "modelDescription": "Start a Nextflow pipeline run from Positron, which then appears in the Pipeline Runs view. The user confirms before it starts. Returns the new run's name; follow it with nextflow_runStatus.",
+        "tags": [
+          "positron-assistant",
+          "requires-workspace",
+          "requires-actions",
+          "nextflow"
+        ],
+        "inputSchema": {
+          "type": "object",
+          "required": [
+            "script"
+          ],
+          "properties": {
+            "script": {
+              "type": "string",
+              "description": "Path of the pipeline's entry script (e.g. main.nf), absolute or relative to the workspace folder."
+            },
+            "profiles": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Config profiles to use, e.g. [\"test\", \"docker\"]."
+            },
+            "params": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number",
+                  "boolean"
+                ]
+              },
+              "description": "Pipeline parameters, as given with --name value on the command line."
+            },
+            "resumeRunName": {
+              "type": "string",
+              "description": "Resume this earlier run, reusing its cached tasks."
+            }
+          }
+        },
+        "when": "isPositron"
+      },
+      {
+        "name": "nextflow_stopRun",
+        "displayName": "Stop Nextflow Run",
+        "toolReferenceName": "nextflowStop",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(debug-stop)",
+        "userDescription": "Stop a running Nextflow pipeline, after confirmation.",
+        "modelDescription": "Stop a running Nextflow pipeline run gracefully: Nextflow cancels its running tasks (including Workbench jobs) and exits. The user confirms first.",
+        "tags": [
+          "positron-assistant",
+          "requires-workspace",
+          "requires-actions",
+          "nextflow"
+        ],
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "runName": {
+              "type": "string",
+              "description": "Name of the run, as listed by nextflow_listRuns. Defaults to the most recent run."
+            }
+          }
+        },
+        "when": "isPositron"
+      }
     ]
   },
   "scripts": {

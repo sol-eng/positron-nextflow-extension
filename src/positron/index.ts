@@ -5,6 +5,7 @@ import type { PositronApi } from "@posit-dev/positron";
 
 import { activateDataExplorer } from "./dataExplorer";
 import { activateDebugTask } from "./debugTask";
+import { activateLmTools } from "./lmTools";
 import { activateRunEmbeddedCode } from "./runEmbeddedCode";
 import { activateRuns } from "./runs";
 import { activateReports } from "./runs/reports";
@@ -40,5 +41,7 @@ export function activatePositron(context: vscode.ExtensionContext) {
   activateRunEmbeddedCode(context, api);
   activateDataExplorer(context);
   activateDebugTask(context, api);
-  activateReports(context, api, activateRuns(context));
+  const runs = activateRuns(context);
+  activateReports(context, api, runs);
+  activateLmTools(context, runs);
 }
