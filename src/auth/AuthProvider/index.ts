@@ -13,6 +13,8 @@ import { PromiseAdapter, promiseFromEvent } from "./utils/promiseFromEvent";
 import UriEventHandler from "./utils/UriEventHandler";
 import { fetchPlatformData } from "../../webview/WebviewProvider/lib";
 import { SEQERA_PLATFORM_URL } from "../../shared/constants";
+// Positron:
+import { isPositron, promptForAccessToken } from "../../positron";
 
 import type {
   AuthenticationProvider,
@@ -138,6 +140,11 @@ class AuthProvider implements AuthenticationProvider, Disposable {
   }
 
   private async login(scopes: string[] = []) {
+    // Positron: the browser redirect does not reach Positron, so offer a token
+    if (isPositron()) {
+      const token = await promptForAccessToken();
+      if (token) return token;
+    }
     return await window.withProgress<string>(
       {
         location: ProgressLocation.Notification,

@@ -189,6 +189,38 @@
         "title": "Reload Seqera Webview",
         "category": "Nextflow",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "nextflow.positron.runSelection",
+        "title": "Run Line or Selection in Console",
+        "category": "Nextflow",
+        "icon": "$(play)"
+      },
+      {
+        "command": "nextflow.positron.runBlock",
+        "title": "Run Script Block in Console",
+        "category": "Nextflow",
+        "icon": "$(run-all)"
+      },
+      {
+        "command": "nextflow.positron.openInDataExplorer",
+        "title": "Open in Data Explorer",
+        "category": "Nextflow",
+        "icon": "$(table)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "nextflow.positron.runSelection",
+        "key": "ctrl+enter",
+        "mac": "cmd+enter",
+        "when": "isPositron && editorTextFocus && editorLangId == nextflow"
+      },
+      {
+        "command": "nextflow.positron.runBlock",
+        "key": "ctrl+shift+enter",
+        "mac": "cmd+shift+enter",
+        "when": "isPositron && editorTextFocus && editorLangId == nextflow"
       }
     ],
     "menus": {
@@ -200,6 +232,44 @@
         {
           "command": "nextflow.log.filter.toggle",
           "when": "resourceLangId == nextflow-log"
+        },
+        {
+          "command": "nextflow.positron.runSelection",
+          "when": "isPositron && editorLangId == nextflow"
+        },
+        {
+          "command": "nextflow.positron.runBlock",
+          "when": "isPositron && editorLangId == nextflow"
+        },
+        {
+          "command": "nextflow.positron.openInDataExplorer",
+          "when": "isPositron && resourceFilename =~ /(trace.*\\.txt|\\.(csv|tsv))$/i"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "nextflow.positron.runSelection",
+          "when": "isPositron && editorLangId == nextflow",
+          "group": "navigation@0"
+        },
+        {
+          "command": "nextflow.positron.runBlock",
+          "when": "isPositron && editorLangId == nextflow",
+          "group": "navigation@1"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "nextflow.positron.openInDataExplorer",
+          "when": "isPositron && !explorerResourceIsFolder && resourceFilename =~ /(trace.*\\.txt|\\.(csv|tsv))$/i",
+          "group": "navigation@20"
+        }
+      ],
+      "editor/title/context": [
+        {
+          "command": "nextflow.positron.openInDataExplorer",
+          "when": "isPositron && resourceFilename =~ /(trace.*\\.txt|\\.(csv|tsv))$/i",
+          "group": "navigation@20"
         }
       ],
       "view/title": [
@@ -377,7 +447,7 @@
     "compile": "rm -rf build && npm run check-types && node esbuild.js",
     "package": "rm -rf build && npm run check-types && node esbuild.js --production && (cd build ; vsce package -o positron-nextflow.vsix)",
     "test:syntax": "node syntaxes/highlight.test.js",
-    "test:positron": "esbuild src/positron/test/*.test.ts --bundle --platform=node --format=cjs --outdir=build-test --log-level=warning && node --test build-test/",
+    "test:positron": "esbuild src/positron/test/*.test.ts --bundle --platform=node --format=cjs --outdir=build-test --log-level=warning && node --test \"build-test/*.test.js\"",
     "lint": "eslint ."
   },
   "devDependencies": {

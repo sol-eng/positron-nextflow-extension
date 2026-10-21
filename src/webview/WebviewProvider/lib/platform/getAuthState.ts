@@ -14,7 +14,7 @@ const getAuthState = async (token?: string): Promise<AuthState> => {
   let tokenExpiry: any = 0;
   if (typeof token === "string") {
     const decoded = decodeJWT(token);
-    tokenExpiry = decoded.exp;
+    tokenExpiry = decoded?.exp; // Positron: null for access tokens
     tokenExpired = jwtExpired(token);
   }
   const isAuthenticated = hasToken && !tokenExpired;
