@@ -1,7 +1,9 @@
 // Resolves the run, task or file a command applies to from whatever argument
-// it was invoked with: a tree node, a raw tree item handle, a URI, or nothing.
-// Tree and editor actions pass different shapes depending on where Positron
-// runs (desktop or Posit Workbench), so nothing is assumed about them.
+// it was invoked with. Tree actions pass the clicked node (`{ kind, run }` or
+// `{ kind, run, task }`) and the editor title action passes the file's Uri,
+// on desktop and in Posit Workbench alike. The palette passes nothing, and a
+// raw tree item handle or a plain `{ scheme, path }` object are accepted too,
+// in case a host does not convert them.
 
 import * as vscode from "vscode";
 

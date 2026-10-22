@@ -16,7 +16,7 @@ Based on upstream [1.8.1](https://github.com/nextflow-io/vscode-language-nextflo
 ### Fixed
 
 - Failures in the run commands are shown as an error message, with details in the Nextflow Runs output, instead of failing silently.
-- The ▶ button and the Pipeline Runs actions (Run Again, Resume, Open Report, Show Run Output, and the task actions) find the clicked run or task from the different argument shapes passed by Positron on desktop and in Posit Workbench. Each invocation is logged with its argument shape in the Nextflow Runs output.
+- Open Report and the other report commands no longer fail when the clicked run cannot be found; like the other run and task commands, they fall back to a picker. Each command invocation is logged with its argument shape in the Nextflow Runs output.
 
 ## [0.1.0] - 2026-10-22
 
