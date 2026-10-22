@@ -57,6 +57,8 @@ This repository is a fork of [nextflow-io/vscode-language-nextflow](https://gith
 
 The run manager lives in `src/positron/runs/`. Its pure parts (the event reducer, trace and history parsing, and command-line building in `model.ts`, `events.ts`, `trace.ts` and `launchArgs.ts`) are kept free of `vscode`, and are tested against output captured from real Nextflow runs in `src/positron/test/fixtures/`. Live status comes from the events file written by the `nf-workbench` plugin (`workbench.eventsFile`, in [posit-sdk-nextflow](https://github.com/michaelmayer2/posit-sdk-nextflow)). Changes to the event format need a matching change there.
 
+Every push to `main` publishes a pre-release with the VSIX, numbered `<version>-dev.<run>` (see `.github/workflows/prerelease.yml`); the last five are kept. To release, set the version in `package.json`, add a `CHANGELOG.md` entry noting the upstream base, tag `v<version>` and create a GitHub release with the VSIX. Then bump `package.json` to the next patch version, so pre-releases sort after the release.
+
 Run the unit tests for `src/positron` with `npm run test:positron`, and build and install into Positron with `make install`. `make test` launches Positron with the extension loaded; set `EDITOR_CLI` to use another editor.
 
 Upstream's tags are fetched as `upstream/v*`, because its version numbers overlap the fork's own `v*` tags:
