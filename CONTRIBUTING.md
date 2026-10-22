@@ -59,12 +59,19 @@ The run manager lives in `src/positron/runs/`. Its pure parts (the event reducer
 
 Run the unit tests for `src/positron` with `npm run test:positron`, and build and install into Positron with `make install`. `make test` launches Positron with the extension loaded; set `EDITOR_CLI` to use another editor.
 
-To bring in an upstream release, merge it on a branch rather than rebasing:
+Upstream's tags are fetched as `upstream/v*`, because its version numbers overlap the fork's own `v*` tags:
 
 ```bash
-git fetch upstream --tags
+git config remote.upstream.tagOpt --no-tags
+git config --add remote.upstream.fetch '+refs/tags/*:refs/tags/upstream/*'
+```
+
+To bring in an upstream release, merge it on a branch rather than rebasing. Keep the fork's `CHANGELOG.md`, and record the new upstream base in the next release's entry:
+
+```bash
+git fetch upstream
 git checkout -b merge/upstream-v1.9.0
-git merge v1.9.0
+git merge upstream/v1.9.0
 ```
 
 ## Publishing
