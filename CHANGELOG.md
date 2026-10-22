@@ -11,6 +11,11 @@ Based on upstream [1.8.1](https://github.com/nextflow-io/vscode-language-nextflo
 ### Changed
 
 - From upstream 1.8.1: the language server uses a standalone build on Linux and macOS (Apple silicon), so it no longer needs Java there. Old language server versions are removed from the local cache.
+- Run Pipeline shows the profile picker straight away while it reads the profiles, and later steps show their progress as a notification.
+
+### Fixed
+
+- Failures in the run commands are shown as an error message, with details in the Nextflow Runs output, instead of failing silently.
 
 ## [0.1.0] - 2026-10-22
 

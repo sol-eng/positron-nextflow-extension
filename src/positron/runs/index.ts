@@ -112,7 +112,7 @@ export function activateRuns(context: vscode.ExtensionContext): RunStore {
       }
     }),
     ...Object.entries(commands).map(([id, fn]) =>
-      vscode.commands.registerCommand(id, fn)
+      vscode.commands.registerCommand(id, reportErrors(id, fn))
     )
   );
   store.load();
@@ -592,10 +592,34 @@ async function confirm(
 
 let diagnostics: vscode.OutputChannel | undefined;
 
+function output(): vscode.OutputChannel {
+  diagnostics ??= vscode.window.createOutputChannel("Nextflow Runs");
+  return diagnostics;
+}
+
+/** Show a command's failure instead of letting it fail silently. */
+function reportErrors(id: string, fn: (...args: any[]) => unknown) {
+  return async (...args: any[]) => {
+    try {
+      return await fn(...args);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      output().appendLine(
+        `${id} failed: ${e instanceof Error ? e.stack : message}`
+      );
+      const show = "Show Log";
+      vscode.window
+        .showErrorMessage(`Nextflow: ${message}`, show)
+        .then((choice) => choice && output().show());
+      return undefined;
+    }
+  };
+}
+
 async function showDiagnostics() {
   resetRunEnvironment();
   const environment = await runEnvironment();
-  diagnostics ??= vscode.window.createOutputChannel("Nextflow Runs");
+  const channel = output();
   const lines = [
     `Nextflow: ${environment.nextflow ?? "not found"}${environment.version ? ` (${environment.version})` : ""}`,
     `Java: ${environment.java ?? "not found"}${environment.env.JAVA_HOME ? ` (JAVA_HOME=${environment.env.JAVA_HOME})` : ""}`,
@@ -614,7 +638,6 @@ async function showDiagnostics() {
   }
   if (environment.problems.length)
     lines.push("", "Problems:", ...environment.problems.map((p) => `- ${p}`));
-  diagnostics.clear();
-  diagnostics.appendLine(lines.join("\n"));
-  diagnostics.show();
+  channel.appendLine(lines.join("\n"));
+  channel.show();
 }

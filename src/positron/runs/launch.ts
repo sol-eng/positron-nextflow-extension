@@ -29,27 +29,8 @@ export async function pickLaunch(
     lastConfigKey(script)
   );
 
-  const profiles = await withProgress(
-    "Reading the pipeline's profiles...",
-    () => readProfiles(environment, cwd)
-  );
-  let chosenProfiles: string[] = [];
-  if (profiles.length) {
-    const picked = await vscode.window.showQuickPick(
-      profiles.map((label) => ({
-        label,
-        picked: previous?.profiles.includes(label) ?? false
-      })),
-      {
-        title: "Run Pipeline: Profiles",
-        placeHolder: "Select the profiles to use, or none",
-        canPickMany: true,
-        ignoreFocusOut: true
-      }
-    );
-    if (!picked) return undefined;
-    chosenProfiles = picked.map((p) => p.label);
-  }
+  const chosenProfiles = await pickProfiles(environment, cwd, previous);
+  if (!chosenProfiles) return undefined;
 
   const params = await pickParams(cwd, previous);
   if (!params) return undefined;
@@ -119,6 +100,52 @@ async function pickScript(uri?: vscode.Uri): Promise<string | undefined> {
     filters: { Nextflow: ["nf"] }
   });
   return chosen?.[0].fsPath;
+}
+
+/**
+ * Reading the profiles starts a JVM, which can take a while, so the picker is
+ * shown straight away and filled in when they are known.
+ */
+function pickProfiles(
+  environment: RunEnvironment,
+  cwd: string,
+  previous?: LaunchConfig
+): Promise<string[] | undefined> {
+  const quickPick = vscode.window.createQuickPick();
+  quickPick.title = "Run Pipeline: Profiles";
+  quickPick.placeholder = "Reading the pipeline's profiles...";
+  quickPick.canSelectMany = true;
+  quickPick.ignoreFocusOut = true;
+  quickPick.busy = true;
+  quickPick.enabled = false;
+  quickPick.show();
+  return new Promise((resolve) => {
+    let settled = false;
+    const done = (value: string[] | undefined) => {
+      if (settled) return;
+      settled = true;
+      resolve(value);
+      quickPick.dispose();
+    };
+    quickPick.onDidAccept(() =>
+      done(quickPick.selectedItems.map((item) => item.label))
+    );
+    quickPick.onDidHide(() => done(undefined));
+    readProfiles(environment, cwd).then((profiles) => {
+      if (settled) return;
+      if (!profiles.length) {
+        done([]);
+        return;
+      }
+      quickPick.items = profiles.map((label) => ({ label }));
+      quickPick.selectedItems = quickPick.items.filter((item) =>
+        previous?.profiles.includes(item.label)
+      );
+      quickPick.placeholder = "Select the profiles to use, or none";
+      quickPick.busy = false;
+      quickPick.enabled = true;
+    });
+  });
 }
 
 async function readProfiles(
@@ -256,7 +283,7 @@ export async function listClusters(
 
 function withProgress<T>(title: string, task: () => Promise<T>): Thenable<T> {
   return vscode.window.withProgress(
-    { location: vscode.ProgressLocation.Window, title },
+    { location: vscode.ProgressLocation.Notification, title },
     task
   );
 }
