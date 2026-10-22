@@ -40,8 +40,8 @@ export function activatePositron(context: vscode.ExtensionContext) {
   if (!api) return;
   activateRunEmbeddedCode(context, api);
   activateDataExplorer(context);
-  activateDebugTask(context, api);
   const runs = activateRuns(context);
+  activateDebugTask(context, api, runs);
   activateReports(context, api, runs);
   activateLmTools(context, runs);
 }

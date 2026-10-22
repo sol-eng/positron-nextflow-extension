@@ -10,8 +10,10 @@ import type { PositronApi } from "@posit-dev/positron";
 
 import { chdirCode, shebangLanguage } from "./embeddedBlock";
 import { waitForRuntime } from "./runEmbeddedCode";
+import { registerCommand } from "./runs/log";
 import type { TaskState } from "./runs/model";
-import type { RunNode } from "./runs/tree";
+import { resolveTask } from "./runs/select";
+import type { RunStore } from "./runs/store";
 
 async function debugTask(api: PositronApi, task: TaskState) {
   if (!task.workdir) return;
@@ -63,12 +65,19 @@ async function debugTask(api: PositronApi, task: TaskState) {
 
 export function activateDebugTask(
   context: vscode.ExtensionContext,
-  api: PositronApi
+  api: PositronApi,
+  store: RunStore
 ) {
   context.subscriptions.push(
-    vscode.commands.registerCommand(
-      "nextflow.positron.runs.debugTask",
-      (node?: RunNode) => node?.kind === "task" && debugTask(api, node.task)
-    )
+    registerCommand("nextflow.positron.runs.debugTask", (node?: unknown) => {
+      const found = resolveTask(store, node);
+      if (!found) {
+        vscode.window.showWarningMessage(
+          "Could not find that task; refresh the Pipeline Runs view and try again."
+        );
+        return;
+      }
+      return debugTask(api, found.task);
+    })
   );
 }

@@ -1,0 +1,93 @@
+// Resolves the run, task or file a command applies to from whatever argument
+// it was invoked with: a tree node, a raw tree item handle, a URI, or nothing.
+// Tree and editor actions pass different shapes depending on where Positron
+// runs (desktop or Posit Workbench), so nothing is assumed about them.
+
+import * as vscode from "vscode";
+
+import type { TaskState } from "./model";
+import type { Run, RunStore } from "./store";
+import { runDuration } from "./tree";
+
+/** Tree item ids: the run directory, or `<dir>#task<id>` for a task. */
+const TASK_ID = /^(.*)#task(\d+)$/;
+
+/** The id behind a tree item handle such as `1/<id>`. */
+function handleId(arg: any): string | undefined {
+  const handle = arg?.$treeItemHandle;
+  return typeof handle === "string" && handle.startsWith("1/")
+    ? handle.slice(2)
+    : undefined;
+}
+
+export function resolveRun(store: RunStore, arg: any): Run | undefined {
+  const dir = arg?.run?.files?.dir ?? handleId(arg)?.replace(/#.*$/, "");
+  return typeof dir === "string" ? store.get(dir) : undefined;
+}
+
+export function resolveTask(
+  store: RunStore,
+  arg: any
+): { run: Run; task: TaskState } | undefined {
+  if (arg?.kind === "task" && arg.task) {
+    const run = resolveRun(store, arg);
+    return run ? { run, task: arg.task } : undefined;
+  }
+  const match = handleId(arg)?.match(TASK_ID);
+  const run = match && store.get(match[1]);
+  const task = run && run.progress.tasks[Number(match[2])];
+  return run && task ? { run, task } : undefined;
+}
+
+/** A file URI from a `vscode.Uri` or a plain `{ scheme, path }` object. */
+export function resolveUri(arg: any): vscode.Uri | undefined {
+  if (arg instanceof vscode.Uri) return arg;
+  if (typeof arg?.scheme === "string" && typeof arg?.path === "string") {
+    return vscode.Uri.from(arg);
+  }
+  return undefined;
+}
+
+/** Resolve the run from the argument, or ask which run is meant. */
+export async function withRun(
+  store: RunStore,
+  arg: unknown,
+  action: (run: Run) => unknown,
+  filter: (run: Run) => boolean = () => true
+) {
+  let run = resolveRun(store, arg);
+  if (!run) {
+    await store.ready;
+    const runs = store.all().filter(filter);
+    if (!runs.length) {
+      vscode.window.showInformationMessage(
+        "There are no matching pipeline runs."
+      );
+      return;
+    }
+    const picked =
+      runs.length === 1
+        ? { run: runs[0] }
+        : await vscode.window.showQuickPick(
+            runs.map((r) => ({
+              label: r.record.runName,
+              description: `${r.status} · ${runDuration(r)}`,
+              run: r
+            })),
+            { title: "Select a pipeline run" }
+          );
+    run = picked?.run;
+  }
+  if (run) return action(run);
+}
+
+/** A short description of an argument's shape, for the log. */
+export function describeArg(arg: unknown): string {
+  if (arg === undefined || arg === null) return String(arg);
+  if (arg instanceof vscode.Uri) return `Uri(${arg.toString()})`;
+  if (typeof arg !== "object") return `${typeof arg}`;
+  const ctor = (arg as object).constructor?.name ?? "Object";
+  const keys = Object.keys(arg as object).slice(0, 8);
+  const handle = (arg as any).$treeItemHandle;
+  return `${ctor}{${keys.join(",")}}${handle ? ` handle=${handle}` : ""}`;
+}

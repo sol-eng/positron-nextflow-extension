@@ -25,8 +25,10 @@ import { isTerminal, summarize, totals, type TaskState } from "./model";
 import { trackOutputTerminals, showOutput } from "./output";
 import { processCommand, signalRun, startRun, type RunRecord } from "./runner";
 import { isActive, RunStore, type Run } from "./store";
+import { output, reportErrors } from "./log";
+import { describeArg, resolveTask, resolveUri, withRun } from "./select";
 import { parseHistory } from "./trace";
-import { RunsTreeProvider, runDuration, type RunNode } from "./tree";
+import { RunsTreeProvider, runDuration } from "./tree";
 
 export type { Run, RunStore } from "./store";
 
@@ -60,32 +62,35 @@ export function activateRuns(context: vscode.ExtensionContext): RunStore {
   store.onDidFinish((run) => notifyFinished(run));
 
   const commands: Record<string, (...args: any[]) => unknown> = {
-    "nextflow.positron.runs.run": (uri?: vscode.Uri) =>
-      runPipeline(context, store, uri),
-    "nextflow.positron.runs.runAgain": (node?: RunNode) =>
+    "nextflow.positron.runs.run": (uri?: unknown) =>
+      runPipeline(context, store, resolveUri(uri)),
+    "nextflow.positron.runs.runAgain": (node?: unknown) =>
       withRun(store, node, (run) => relaunch(context, store, run, false)),
-    "nextflow.positron.runs.resume": (node?: RunNode) =>
+    "nextflow.positron.runs.resume": (node?: unknown) =>
       withRun(store, node, (run) => relaunch(context, store, run, true)),
-    "nextflow.positron.runs.stop": (node?: RunNode) =>
+    "nextflow.positron.runs.stop": (node?: unknown) =>
       withRun(store, node, (run) => stopRun(store, run), isActive),
-    "nextflow.positron.runs.kill": (node?: RunNode) =>
+    "nextflow.positron.runs.kill": (node?: unknown) =>
       withRun(store, node, (run) => killRun(store, run), isActive),
-    "nextflow.positron.runs.clean": (node?: RunNode) =>
+    "nextflow.positron.runs.clean": (node?: unknown) =>
       withRun(store, node, (run) => cleanRun(run)),
-    "nextflow.positron.runs.showOutput": (node?: RunNode) =>
+    "nextflow.positron.runs.showOutput": (node?: unknown) =>
       withRun(store, node, (run) => showOutput(run)),
-    "nextflow.positron.runs.openLog": (node?: RunNode) =>
+    "nextflow.positron.runs.openLog": (node?: unknown) =>
       withRun(store, node, (run) => openFile(run.files.log)),
-    "nextflow.positron.runs.remove": (node?: RunNode) =>
+    "nextflow.positron.runs.remove": (node?: unknown) =>
       withRun(store, node, (run) => removeRun(store, run)),
-    "nextflow.positron.runs.cancelTask": (node: RunNode) =>
-      node?.kind === "task" && cancelTask(node.run, node.task),
-    "nextflow.positron.runs.showTaskFiles": (node: RunNode) =>
-      node?.kind === "task" && showTaskFiles(node.task),
-    "nextflow.positron.runs.copyWorkDir": (node: RunNode) =>
-      node?.kind === "task" &&
-      node.task.workdir &&
-      vscode.env.clipboard.writeText(node.task.workdir),
+    "nextflow.positron.runs.cancelTask": (node?: unknown) =>
+      withTask(store, node, ({ run, task }) => cancelTask(run, task)),
+    "nextflow.positron.runs.showTaskFiles": (node?: unknown) =>
+      withTask(store, node, ({ task }) => showTaskFiles(task)),
+    "nextflow.positron.runs.copyWorkDir": (node?: unknown) =>
+      withTask(
+        store,
+        node,
+        ({ task }) =>
+          task.workdir && vscode.env.clipboard.writeText(task.workdir)
+      ),
     "nextflow.positron.runs.refresh": () => store.load(),
     "nextflow.positron.runs.diagnostics": () => showDiagnostics(),
     "nextflow.positron.runs.installNextflow": () => installNextflow(),
@@ -119,36 +124,21 @@ export function activateRuns(context: vscode.ExtensionContext): RunStore {
   return store;
 }
 
-/** Resolve the run a command applies to: the node, or a pick from the list. */
-async function withRun(
+/** Task commands only come from the tree, so a task node is required. */
+function withTask(
   store: RunStore,
-  node: RunNode | undefined,
-  action: (run: Run) => unknown,
-  filter: (run: Run) => boolean = () => true
+  arg: unknown,
+  action: (found: { run: Run; task: TaskState }) => unknown
 ) {
-  let run = node && "run" in node ? store.get(node.run.files.dir) : undefined;
-  if (!run) {
-    const runs = store.all().filter(filter);
-    if (!runs.length) {
-      vscode.window.showInformationMessage(
-        "There are no matching pipeline runs."
-      );
-      return;
-    }
-    const picked =
-      runs.length === 1
-        ? { run: runs[0] }
-        : await vscode.window.showQuickPick(
-            runs.map((r) => ({
-              label: r.record.runName,
-              description: `${r.status} · ${runDuration(r)}`,
-              run: r
-            })),
-            { title: "Select a pipeline run" }
-          );
-    run = picked?.run;
+  const found = resolveTask(store, arg);
+  if (!found) {
+    output().appendLine(`Could not find the task for ${describeArg(arg)}`);
+    vscode.window.showWarningMessage(
+      "Could not find that task; refresh the Pipeline Runs view and try again."
+    );
+    return;
   }
-  if (run) return action(run);
+  return action(found);
 }
 
 async function readyEnvironment(): Promise<RunEnvironment | undefined> {
@@ -588,32 +578,6 @@ async function confirm(
     action
   );
   return choice === action;
-}
-
-let diagnostics: vscode.OutputChannel | undefined;
-
-function output(): vscode.OutputChannel {
-  diagnostics ??= vscode.window.createOutputChannel("Nextflow Runs");
-  return diagnostics;
-}
-
-/** Show a command's failure instead of letting it fail silently. */
-function reportErrors(id: string, fn: (...args: any[]) => unknown) {
-  return async (...args: any[]) => {
-    try {
-      return await fn(...args);
-    } catch (e) {
-      const message = e instanceof Error ? e.message : String(e);
-      output().appendLine(
-        `${id} failed: ${e instanceof Error ? e.stack : message}`
-      );
-      const show = "Show Log";
-      vscode.window
-        .showErrorMessage(`Nextflow: ${message}`, show)
-        .then((choice) => choice && output().show());
-      return undefined;
-    }
-  };
 }
 
 async function showDiagnostics() {
