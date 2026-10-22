@@ -4,6 +4,18 @@ All notable changes to Positron Nextflow are documented here. See [Keep a Change
 
 Positron Nextflow is a fork of the [Nextflow extension for VS Code](https://github.com/nextflow-io/vscode-language-nextflow). Each release lists the upstream revision it is based on; see upstream's [changelog](https://github.com/nextflow-io/vscode-language-nextflow/blob/main/CHANGELOG.md) for the changes in those releases.
 
+## [Unreleased]
+
+### Added
+
+- Task dashboard in the Viewer, opened by clicking a task in Pipeline Runs.
+  - It shows the task's status, exit code, attempt, duration, Workbench job id, and requested vs used CPU and memory.
+  - Its files appear as labelled sections: error output, output, script, combined log, resource usage, and the Nextflow wrapper. A failed task leads with its errors.
+  - It lists the task's outputs and staged inputs. HTML outputs, such as FastQC reports, open in the Viewer, CSV/TSV in the Data Explorer, and other files in the editor.
+  - Its logs refresh while the task runs.
+- Run dashboard in the Viewer, from the dashboard button on a run.
+  - It shows per-process progress, failed tasks with the end of their error output, the running tasks, and links to the report, timeline, DAG and trace.
+
 ## [0.1.1] - 2026-10-22
 
 Based on upstream [1.8.1](https://github.com/nextflow-io/vscode-language-nextflow/releases/tag/v1.8.1), at [`c149b5f`](https://github.com/nextflow-io/vscode-language-nextflow/commit/c149b5f).

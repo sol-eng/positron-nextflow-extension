@@ -8,6 +8,7 @@ import { activateDebugTask } from "./debugTask";
 import { activateLmTools } from "./lmTools";
 import { activateRunEmbeddedCode } from "./runEmbeddedCode";
 import { activateRuns } from "./runs";
+import { activateDashboard } from "./runs/dashboard/panel";
 import { activateReports } from "./runs/reports";
 
 export { hasConflictingExtension } from "./conflict";
@@ -43,5 +44,6 @@ export function activatePositron(context: vscode.ExtensionContext) {
   const runs = activateRuns(context);
   activateDebugTask(context, api, runs);
   activateReports(context, api, runs);
+  activateDashboard(context, api, runs);
   activateLmTools(context, runs);
 }

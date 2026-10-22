@@ -86,7 +86,9 @@ function applyTrace(
     attempt: numberOr(trace.attempt),
     submit: positive(trace.submit),
     start: positive(trace.start),
-    complete: positive(trace.complete)
+    complete: positive(trace.complete),
+    cpus: positive(trace.cpus),
+    memory: positive(trace.memory)
   });
 }
 

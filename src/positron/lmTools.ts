@@ -13,6 +13,7 @@ import {
   type Run,
   type RunStore
 } from "./runs";
+import { readTail } from "./runs/dashboard/taskFiles";
 import { isTerminal } from "./runs/model";
 import { isActive } from "./runs/store";
 
@@ -37,9 +38,13 @@ function findRun(store: RunStore, runName?: string): Run | undefined {
   return runName ? runs.find((r) => r.record.runName === runName) : runs[0];
 }
 
-async function tail(file: string, lines: number): Promise<string | undefined> {
-  const text = await fs.promises.readFile(file, "utf8").catch(() => undefined);
-  return text?.trimEnd().split("\n").slice(-lines).join("\n") || undefined;
+function tail(file: string, lines: number): string | undefined {
+  try {
+    const { text } = readTail(file, 16 * 1024);
+    return text.trimEnd().split("\n").slice(-lines).join("\n") || undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 async function runStatus(run: Run) {
@@ -54,7 +59,7 @@ async function runStatus(run: Run) {
         attempt: t.attempt,
         workdir: t.workdir,
         stderr: t.workdir
-          ? await tail(path.join(t.workdir, ".command.err"), STDERR_LINES)
+          ? tail(path.join(t.workdir, ".command.err"), STDERR_LINES)
           : undefined
       }))
     ),

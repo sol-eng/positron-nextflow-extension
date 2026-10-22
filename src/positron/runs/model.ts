@@ -26,6 +26,9 @@ export type TaskState = {
   submit?: number;
   start?: number;
   complete?: number;
+  /** requested resources */
+  cpus?: number;
+  memory?: number;
 };
 
 export type WorkflowInfo = {

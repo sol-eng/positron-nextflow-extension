@@ -232,8 +232,8 @@ function taskItem(run: Run, task: TaskState): vscode.TreeItem {
     .join("\n");
   if (task.workdir) {
     item.command = {
-      command: "nextflow.positron.runs.showTaskFiles",
-      title: "Show Task Files",
+      command: "nextflow.positron.runs.showTask",
+      title: "Open Task Dashboard",
       arguments: [{ kind: "task", run, task }]
     };
   }

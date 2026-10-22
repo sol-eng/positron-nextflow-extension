@@ -6,6 +6,9 @@ import { describeArg } from "./select";
 
 let channel: vscode.OutputChannel | undefined;
 
+/** Called in a loop by tests and the Assistant tools, so not logged. */
+const QUIET = new Set(["nextflow.positron.runs.list"]);
+
 export function output(): vscode.OutputChannel {
   channel ??= vscode.window.createOutputChannel("Nextflow Runs");
   return channel;
@@ -17,9 +20,11 @@ export function output(): vscode.OutputChannel {
  */
 export function reportErrors(id: string, fn: (...args: any[]) => unknown) {
   return async (...args: any[]) => {
-    output().appendLine(
-      `${new Date().toISOString()} ${id}(${args.map(describeArg).join(", ")})`
-    );
+    if (!QUIET.has(id)) {
+      output().appendLine(
+        `${new Date().toISOString()} ${id}(${args.map(describeArg).join(", ")})`
+      );
+    }
     try {
       return await fn(...args);
     } catch (e) {

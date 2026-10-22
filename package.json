@@ -325,6 +325,18 @@
         "title": "Debug Task in Console",
         "category": "Nextflow",
         "icon": "$(debug-console)"
+      },
+      {
+        "command": "nextflow.positron.runs.showTask",
+        "title": "Open Task Dashboard",
+        "category": "Nextflow",
+        "icon": "$(dashboard)"
+      },
+      {
+        "command": "nextflow.positron.runs.showRunDashboard",
+        "title": "Open Run Dashboard",
+        "category": "Nextflow",
+        "icon": "$(dashboard)"
       }
     ],
     "keybindings": [
@@ -442,6 +454,14 @@
         {
           "command": "nextflow.positron.runs.debugTask",
           "when": "false"
+        },
+        {
+          "command": "nextflow.positron.runs.showTask",
+          "when": "false"
+        },
+        {
+          "command": "nextflow.positron.runs.showRunDashboard",
+          "when": "isPositron"
         }
       ],
       "editor/context": [
@@ -503,6 +523,21 @@
         }
       ],
       "view/item/context": [
+        {
+          "command": "nextflow.positron.runs.showRunDashboard",
+          "when": "view == nextflow.runs && viewItem =~ /^run\\./",
+          "group": "inline@3"
+        },
+        {
+          "command": "nextflow.positron.runs.showRunDashboard",
+          "when": "view == nextflow.runs && viewItem =~ /^run\\./",
+          "group": "2_files@0"
+        },
+        {
+          "command": "nextflow.positron.runs.showTask",
+          "when": "view == nextflow.runs && viewItem =~ /^task\\./",
+          "group": "1_task@-1"
+        },
         {
           "command": "nextflow.positron.runs.stop",
           "when": "view == nextflow.runs && viewItem =~ /^run\\.(starting|running)$/",
