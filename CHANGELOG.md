@@ -4,7 +4,7 @@ All notable changes to Positron Nextflow are documented here. See [Keep a Change
 
 Positron Nextflow is a fork of the [Nextflow extension for VS Code](https://github.com/nextflow-io/vscode-language-nextflow). Each release lists the upstream revision it is based on; see upstream's [changelog](https://github.com/nextflow-io/vscode-language-nextflow/blob/main/CHANGELOG.md) for the changes in those releases.
 
-## [Unreleased]
+## [0.1.1] - 2026-10-22
 
 Based on upstream [1.8.1](https://github.com/nextflow-io/vscode-language-nextflow/releases/tag/v1.8.1), at [`c149b5f`](https://github.com/nextflow-io/vscode-language-nextflow/commit/c149b5f).
 
