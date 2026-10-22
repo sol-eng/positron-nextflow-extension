@@ -117,7 +117,7 @@ const SCRIPT = String.raw`
   const badgeClass = (status) => ({
     COMPLETED: "ok", CACHED: "ok", succeeded: "ok",
     FAILED: "bad", ABORTED: "off", failed: "bad", stopped: "off", lost: "off",
-    RUNNING: "run", running: "run", starting: "wait", SUBMITTED: "wait", NEW: "wait"
+    RUNNING: "run", running: "run", starting: "wait", queued: "wait", SUBMITTED: "wait", NEW: "wait"
   }[status] || "off");
   const badge = (status) => '<span class="badge ' + badgeClass(status) + '">' + esc(String(status).toLowerCase()) + "</span>";
   const facts = (rows) => '<dl class="facts">' + rows.filter((r) => r[1] !== undefined && r[1] !== null && r[1] !== "")
@@ -187,6 +187,7 @@ const SCRIPT = String.raw`
         ["Tasks", r.totals.total ? r.totals.done + " of " + r.totals.total + " done" + (r.totals.failed ? ", " + r.totals.failed + " failed" : "") + (r.totals.running ? ", " + r.totals.running + " running" : "") : "none yet"],
         ["Duration", d.duration],
         ["Profiles", (r.profiles || []).join(", ")],
+        ["Driver", d.driver],
         ["Workbench cluster", d.cluster],
         ["Session", r.sessionId],
         ["Started", r.startedAt && new Date(r.startedAt).toLocaleString()]

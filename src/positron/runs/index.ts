@@ -14,10 +14,17 @@ import {
   runSetting,
   type RunEnvironment
 } from "./env";
-import { pickLaunch, type LaunchPlan } from "./launch";
+import { cancelJobs, stopDriverJob, submitDriverJob } from "./driverJob";
+import {
+  driverJobAvailable,
+  driverOptions,
+  pickLaunch,
+  type LaunchPlan
+} from "./launch";
 import {
   makeRunName,
   mergePlugins,
+  resolveDriverMode,
   runFiles,
   type LaunchConfig
 } from "./launchArgs";
@@ -59,7 +66,10 @@ export function activateRuns(context: vscode.ExtensionContext): RunStore {
     statusBar.show();
   };
   store.onDidChange(updateStatusBar);
-  store.onDidFinish((run) => notifyFinished(run));
+  store.onDidFinish((run) => {
+    notifyFinished(run);
+    cancelOrphans(run);
+  });
 
   const commands: Record<string, (...args: any[]) => unknown> = {
     "nextflow.positron.runs.run": (uri?: unknown) =>
@@ -199,9 +209,22 @@ export async function launchConfig(
     config.profiles.length ? ["-profile", config.profiles.join(",")] : []
   );
   const declaredPlugins: string[] = (resolved?.plugins ?? []).map(String);
+  // without prompting: a Workbench job when the setting allows one and its
+  // cluster is known, otherwise in this session
+  const { mode } = resolveDriverMode(
+    runSetting<string>("driver", "auto"),
+    await driverJobAvailable(environment)
+  );
+  const cluster =
+    config.workbench?.cluster ??
+    resolved?.workbench?.cluster ??
+    (runSetting("headless.cluster", "") || undefined);
+  const driver =
+    mode === "job" && cluster ? driverOptions(environment, cluster) : undefined;
   const run = await launch(context, store, environment, {
     config,
-    declaredPlugins
+    declaredPlugins,
+    driver
   });
   return run && describeRun(run);
 }
@@ -219,6 +242,8 @@ export function describeRun(run: Run) {
     sessionId: run.progress.workflow?.sessionId,
     errorMessage: run.progress.errorMessage,
     liveStatus: run.record.withEvents,
+    driver: run.record.mode === "job" ? "job" : "session",
+    driverJobId: run.record.jobId,
     totals: totals(run.progress),
     processes: summarize(run.progress),
     tasks: Object.values(run.progress.tasks)
@@ -253,7 +278,9 @@ async function relaunch(
   };
   await launch(context, store, environment, {
     config,
-    declaredPlugins: run.record.declaredPlugins
+    declaredPlugins: run.record.declaredPlugins,
+    // where the driver ran last time, with the same job options
+    driver: run.record.mode === "job" ? run.record.driver : undefined
   });
 }
 
@@ -269,7 +296,7 @@ async function launch(
   context: vscode.ExtensionContext,
   store: RunStore,
   environment: RunEnvironment,
-  { config, declaredPlugins }: LaunchPlan
+  { config, declaredPlugins, driver }: LaunchPlan
 ): Promise<Run | undefined> {
   const declaresEvents = declaredPlugins.some(
     (p) => p.split("@")[0] === environment.eventsPlugin.split("@")[0]
@@ -296,15 +323,22 @@ async function launch(
   };
 
   try {
-    await startRun(
-      environment.nextflow!,
-      environment.env,
-      files,
-      record,
-      plugins
-    );
+    if (driver) {
+      await submitDriverJob(environment, files, record, plugins, driver);
+    } else {
+      record.mode = "local";
+      await startRun(
+        environment.nextflow!,
+        environment.env,
+        files,
+        record,
+        plugins
+      );
+    }
   } catch (e) {
-    vscode.window.showErrorMessage(`Failed to start Nextflow: ${e}`);
+    vscode.window.showErrorMessage(
+      `Failed to ${driver ? "submit the Nextflow driver job" : "start Nextflow"}: ${e instanceof Error ? e.message : e}`
+    );
     return undefined;
   }
   const run = store.add(files, record);
@@ -320,7 +354,12 @@ async function launch(
       `Live task status needs the ${environment.eventsPlugin} plugin, which is not installed. Only completed tasks are shown.`
     );
   }
-  if (
+  if (driver) {
+    vscode.window.setStatusBarMessage(
+      `Submitted ${runName} as Workbench job ${record.jobId} on ${driver.cluster}.`,
+      8000
+    );
+  } else if (
     environment.inWorkbench &&
     !context.globalState.get(SUSPEND_WARNING_KEY)
   ) {
@@ -332,10 +371,24 @@ async function launch(
   return run;
 }
 
-export function stopRun(store: RunStore, run: Run) {
+export async function stopRun(store: RunStore, run: Run) {
   run.record.stopRequested = "stop";
   store.save(run);
-  signalRun(run.record, "SIGTERM");
+  if (run.record.mode === "job" && run.record.jobId) {
+    const graceful = await stopDriverJob(
+      await runEnvironment(),
+      run.record.jobId,
+      true
+    );
+    if (!graceful) {
+      vscode.window.showWarningMessage(
+        "The launcher CLI cannot stop jobs gracefully (it needs 0.3.0 or later), so the driver was stopped at once; its task jobs are cancelled when it has ended."
+      );
+      return;
+    }
+  } else {
+    signalRun(run.record, "SIGTERM");
+  }
   vscode.window.setStatusBarMessage(
     `Stopping ${run.record.runName}; Nextflow is cancelling its tasks...`,
     5000
@@ -350,9 +403,14 @@ async function killRun(store: RunStore, run: Run) {
   if (!confirmed) return;
   run.record.stopRequested = "kill";
   store.save(run);
-  signalRun(run.record, "SIGKILL");
-
+  if (run.record.mode === "job" && run.record.jobId) {
+    // the task jobs it leaves behind are cancelled once the driver has ended
+    await stopDriverJob(await runEnvironment(), run.record.jobId, false);
+    return;
+  }
+  // tell local task processes from task jobs before the kill ends them
   const remote = (await runningTasks(run)).filter((t) => !t.local);
+  signalRun(run.record, "SIGKILL");
   if (!remote.length) return;
   if (!runSetting("confirm", true)) {
     await killJobs(remote.map((t) => t.task.nativeId!));
@@ -372,7 +430,10 @@ async function runningTasks(run: Run) {
     (t) => t.nativeId && !isTerminal(t.status)
   );
   return Promise.all(
-    tasks.map(async (task) => ({ task, local: await isLocalTask(task) }))
+    tasks.map(async (task) => ({
+      task,
+      local: run.record.mode !== "job" && (await isLocalTask(task))
+    }))
   );
 }
 
@@ -407,7 +468,7 @@ async function cancelTask(run: Run, task: TaskState) {
     "Cancel Task"
   );
   if (!confirmed) return;
-  if (await isLocalTask(task)) {
+  if (run.record.mode !== "job" && (await isLocalTask(task))) {
     try {
       process.kill(Number(task.nativeId), "SIGTERM");
     } catch (e) {
@@ -545,6 +606,27 @@ async function openFile(file: string) {
   });
 }
 
+/**
+ * A driver job that ended without finishing (stopped at once, killed, or
+ * evicted) cannot cancel its tasks; cancel the task jobs it left behind.
+ */
+async function cancelOrphans(run: Run) {
+  const ids = run.orphans ?? [];
+  run.orphans = undefined;
+  if (!ids.length) return;
+  try {
+    await cancelJobs(await runEnvironment(), ids);
+    vscode.window.setStatusBarMessage(
+      `Cancelled ${ids.length} task job(s) that ${run.record.runName} left running.`,
+      8000
+    );
+  } catch (e) {
+    vscode.window.showWarningMessage(
+      `${run.record.runName} left ${ids.length} task job(s) running, which could not be cancelled: ${e instanceof Error ? e.message : e}`
+    );
+  }
+}
+
 function notifyFinished(run: Run) {
   const { done, total, failed } = totals(run.progress);
   const summary = `${run.record.runName} ${run.status} (${done}/${total} tasks${failed ? `, ${failed} failed` : ""}, ${runDuration(run)}).`;
@@ -589,6 +671,7 @@ async function showDiagnostics() {
     `Java: ${environment.java ?? "not found"}${environment.env.JAVA_HOME ? ` (JAVA_HOME=${environment.env.JAVA_HOME})` : ""}`,
     `Events plugin: ${environment.eventsPlugin} ${environment.eventsPluginInstalled ? "installed" : "not installed"}`,
     `Workbench session: ${environment.inWorkbench ? "yes" : "no"}`,
+    `Driver as a Workbench Job: ${(await driverJobAvailable(environment)) ? `available (setting: ${runSetting("driver", "auto")}, image: ${driverOptions(environment, "-").image ?? "the cluster default"})` : "not available here"}`,
     `PATH: ${environment.env.PATH}`
   ];
   try {

@@ -8,6 +8,12 @@ Positron Nextflow is a fork of the [Nextflow extension for VS Code](https://gith
 
 ### Added
 
+- Headless runs on Posit Workbench: Run Pipeline can start Nextflow itself as a Workbench Job, so the run keeps going when the session is suspended or stopped, and a later session follows it. The job runs in the session's image by default (`PWB_SESSION_CONTAINER_IMAGE`). It submits the pipeline's tasks with Workbench credentials of its own, which last 7 days.
+
+  - Stop stops the job gracefully, so Nextflow cancels its tasks. This needs posit-workbench-nf-launcher 0.3.0; older launchers stop it at once.
+  - Task jobs that a driver left running when it ended without finishing are cancelled.
+  - The `nextflow.run.driver` setting (`auto`, `local` or `job`) and the `nextflow.run.headless.*` settings for the cluster, image, CPUs and memory.
+
 - Task dashboard in the Viewer, opened by clicking a task in Pipeline Runs.
   - It shows the task's status, exit code, attempt, duration, Workbench job id, and requested vs used CPU and memory.
   - Its files appear as labelled sections: error output, output, script, combined log, resource usage, and the Nextflow wrapper. A failed task leads with its errors.
@@ -15,6 +21,10 @@ Positron Nextflow is a fork of the [Nextflow extension for VS Code](https://gith
   - Its logs refresh while the task runs.
 - Run dashboard in the Viewer, from the dashboard button on a run.
   - It shows per-process progress, failed tasks with the end of their error output, the running tasks, and links to the report, timeline, DAG and trace.
+
+### Fixed
+
+- Force Kill no longer sends a run's local task processes to the Workbench launcher to be cancelled as jobs.
 
 ## [0.1.1] - 2026-10-22
 

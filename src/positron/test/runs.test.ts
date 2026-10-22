@@ -5,7 +5,11 @@ import * as path from "node:path";
 
 import { applyEvent, parseEventChunk } from "../runs/events";
 import {
+  buildDriverScript,
   buildRunArgs,
+  orphanedJobIds,
+  parseJobStatus,
+  resolveDriverMode,
   buildRunConfig,
   isNextflowRun,
   makeRunName,
@@ -275,4 +279,80 @@ test("parses the version and recognises its own process", () => {
     )
   );
   assert.ok(!isNextflowRun("vim main-1", "main-1"));
+});
+
+test("builds a driver script that bash runs with the exact arguments", () => {
+  const dir = fs.mkdtempSync(path.join(require("os").tmpdir(), "nf-driver-"));
+  try {
+    // a stand-in for nextflow that records how it was called
+    const fake = path.join(dir, "fake nextflow");
+    fs.writeFileSync(
+      fake,
+      '#!/bin/bash\nprintf "%s\\n" "$PWD" "$NXF_OPTS" "$@"\n',
+      { mode: 0o755 }
+    );
+    const script = buildDriverScript({
+      nextflow: fake,
+      args: ["run", "main.nf", "--input", "my samples.csv", "--note", "it's"],
+      cwd: dir,
+      output: path.join(dir, "output.log"),
+      xmxMb: 3072
+    });
+    assert.match(script, /^#!\/bin\/bash\n/);
+    assert.match(script, /\nexec '/);
+    const driver = path.join(dir, "driver.sh");
+    fs.writeFileSync(driver, script, { mode: 0o755 });
+    require("child_process").execFileSync("/bin/bash", [driver]);
+    const lines = fs
+      .readFileSync(path.join(dir, "output.log"), "utf8")
+      .trimEnd()
+      .split("\n");
+    assert.deepEqual(lines.slice(1), [
+      "-Xms512m -Xmx3072m",
+      "run",
+      "main.nf",
+      "--input",
+      "my samples.csv",
+      "--note",
+      "it's"
+    ]);
+    assert.equal(fs.realpathSync(lines[0]), fs.realpathSync(dir));
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("reads a driver job's state from launcher status output", () => {
+  const output = "11 RUNNING\n42 PENDING\n43 HOLD\n44 DONE\n45 ERROR\n";
+  assert.equal(parseJobStatus(output, "11"), "running");
+  assert.equal(parseJobStatus(output, "42"), "queued");
+  assert.equal(parseJobStatus(output, "43"), "queued");
+  assert.equal(parseJobStatus(output, "44"), "ended");
+  assert.equal(parseJobStatus(output, "45"), "ended");
+  assert.equal(parseJobStatus(output, "99"), "missing");
+});
+
+test("chooses where the driver runs", () => {
+  assert.deepEqual(resolveDriverMode("auto", true), { mode: "job", ask: true });
+  assert.deepEqual(resolveDriverMode("auto", false), {
+    mode: "local",
+    ask: false
+  });
+  assert.deepEqual(resolveDriverMode("job", true), { mode: "job", ask: false });
+  assert.deepEqual(resolveDriverMode("local", true), {
+    mode: "local",
+    ask: false
+  });
+});
+
+test("finds the task jobs a run left behind", () => {
+  assert.deepEqual(
+    orphanedJobIds([
+      { status: "RUNNING", nativeId: "1" },
+      { status: "SUBMITTED", nativeId: "2" },
+      { status: "COMPLETED", nativeId: "3" },
+      { status: "RUNNING" }
+    ]),
+    ["1", "2"]
+  );
 });

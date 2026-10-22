@@ -19,6 +19,17 @@ export type RunRecord = {
   /** plugins the pipeline declares, for Run Again */
   declaredPlugins: string[];
   withEvents: boolean;
+  /** where the driver runs; runs from before this field ran locally */
+  mode?: "local" | "job";
+  /** the driver's Workbench job, for `mode: "job"` */
+  jobId?: string;
+  driver?: {
+    cluster: string;
+    image?: string;
+    cpus: number;
+    memoryMb: number;
+    javaHome?: string;
+  };
   pid?: number;
   /** process group of the run and its local tasks */
   pgid?: number;

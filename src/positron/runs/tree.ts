@@ -16,6 +16,7 @@ export type RunNode =
   | { kind: "note"; run: Run; text: string };
 
 const RUN_ICONS: Record<RunStatus, [string, string?]> = {
+  queued: ["clock", "testing.iconQueued"],
   starting: ["loading~spin"],
   running: ["sync~spin", "charts.blue"],
   succeeded: ["pass", "testing.iconPassed"],
@@ -39,6 +40,13 @@ function icon([id, color]: [string, string?]) {
     id,
     color ? new vscode.ThemeColor(color) : undefined
   );
+}
+
+/** Where a run's driver runs, e.g. "Workbench job 123 on Kubernetes". */
+export function driverLabel(run: Run): string {
+  const { mode, jobId, driver } = run.record;
+  if (mode !== "job") return "in the session that started it";
+  return `Workbench job ${jobId ?? "?"}${driver?.cluster ? ` on ${driver.cluster}` : ""}`;
 }
 
 export function formatDuration(ms: number): string {
@@ -166,6 +174,7 @@ function runItem(run: Run): vscode.TreeItem {
     tooltip.appendMarkdown(
       `Workbench cluster: \`${config.workbench.cluster}\`\n\n`
     );
+  tooltip.appendMarkdown(`Driver: ${driverLabel(run)}\n\n`);
   if (run.progress.workflow?.sessionId)
     tooltip.appendMarkdown(`Session: \`${run.progress.workflow.sessionId}\``);
   item.tooltip = tooltip;

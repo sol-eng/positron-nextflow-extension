@@ -4,13 +4,26 @@
 import * as path from "path";
 import * as vscode from "vscode";
 
-import { execFile, nextflowConfig, type RunEnvironment } from "./env";
-import { formatParams, parseParams, type LaunchConfig } from "./launchArgs";
+import type { DriverJobOptions } from "./driverJob";
+import {
+  execFile,
+  nextflowConfig,
+  runSetting,
+  type RunEnvironment
+} from "./env";
+import {
+  formatParams,
+  parseParams,
+  resolveDriverMode,
+  type LaunchConfig
+} from "./launchArgs";
 
 export type LaunchPlan = {
   config: LaunchConfig;
   /** plugins the pipeline declares with the chosen profiles */
   declaredPlugins: string[];
+  /** run the driver as a Workbench job with these options, else locally */
+  driver?: DriverJobOptions;
 };
 
 type Cluster = { name: string; resourceProfiles: string[] };
@@ -57,6 +70,12 @@ export async function pickLaunch(
     workbench = picked;
   }
 
+  const driver = await pickDriver(
+    environment,
+    workbench?.cluster ?? resolved?.workbench?.cluster
+  );
+  if (driver === null) return undefined;
+
   const config: LaunchConfig = {
     script,
     cwd,
@@ -69,7 +88,109 @@ export async function pickLaunch(
       .get<string[]>("extraArgs", [])
   };
   await context.workspaceState.update(lastConfigKey(script), config);
-  return { config, declaredPlugins };
+  return { config, declaredPlugins, driver };
+}
+
+let launcherWorks: Promise<boolean> | undefined;
+
+/**
+ * A driver job can be submitted from a Workbench session whose launcher CLI
+ * answers. The job then runs with Workbench credentials of its own.
+ */
+export function driverJobAvailable(
+  environment: RunEnvironment
+): Promise<boolean> {
+  if (!environment.inWorkbench) return Promise.resolve(false);
+  launcherWorks ??= execFile(environment.launcherCli, ["whoami", "--json"], {
+    env: environment.env,
+    timeout: 30000
+  }).then(
+    () => true,
+    () => {
+      launcherWorks = undefined;
+      return false;
+    }
+  );
+  return launcherWorks;
+}
+
+/** The driver job's options from the settings, given its cluster. */
+export function driverOptions(
+  environment: RunEnvironment,
+  cluster: string
+): DriverJobOptions {
+  return {
+    cluster,
+    // Workbench sets PWB_SESSION_CONTAINER_IMAGE in sessions
+    image:
+      runSetting("headless.image", "") ||
+      environment.env.PWB_SESSION_CONTAINER_IMAGE ||
+      undefined,
+    cpus: runSetting("headless.cpus", 2),
+    memoryMb: runSetting("headless.memory", 4096),
+    javaHome:
+      vscode.workspace.getConfiguration("nextflow").get<string>("java.home") ||
+      undefined
+  };
+}
+
+/**
+ * Where the driver runs. Resolves to the job's options, to undefined to run
+ * it in this session, or to null if cancelled.
+ */
+async function pickDriver(
+  environment: RunEnvironment,
+  pipelineCluster?: string
+): Promise<DriverJobOptions | undefined | null> {
+  const setting = runSetting<string>("driver", "auto");
+  const available = await driverJobAvailable(environment);
+  if (setting === "job" && !available) {
+    vscode.window.showWarningMessage(
+      "Running Nextflow as a Workbench Job needs a Positron session on Posit Workbench with a working launcher CLI; it runs in this session instead."
+    );
+  }
+  const { mode, ask } = resolveDriverMode(setting, available);
+  if (mode === "local") return undefined;
+  if (ask) {
+    const job = {
+      label: "$(cloud) As a Workbench Job",
+      description: "keeps running when this session is suspended or stopped",
+      mode: "job"
+    };
+    const local = {
+      label: "$(vm) In this session",
+      description: "stops with the session",
+      mode: "local"
+    };
+    const picked = await vscode.window.showQuickPick([job, local], {
+      title: "Run Pipeline: Where should Nextflow run?",
+      ignoreFocusOut: true
+    });
+    if (!picked) return null;
+    if (picked.mode === "local") return undefined;
+  }
+  let cluster = pipelineCluster || runSetting("headless.cluster", "");
+  if (!cluster) {
+    const clusters = await withProgress("Listing Workbench clusters...", () =>
+      listClusters(environment)
+    );
+    if (!clusters?.length) return undefined;
+    const picked =
+      clusters.length === 1
+        ? clusters[0]
+        : (
+            await vscode.window.showQuickPick(
+              clusters.map((c) => ({ label: c.name, cluster: c })),
+              {
+                title: "Run Pipeline: Cluster for the Nextflow driver",
+                ignoreFocusOut: true
+              }
+            )
+          )?.cluster;
+    if (!picked) return null;
+    cluster = picked.name;
+  }
+  return driverOptions(environment, cluster);
 }
 
 async function pickScript(uri?: vscode.Uri): Promise<string | undefined> {

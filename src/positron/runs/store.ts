@@ -6,12 +6,20 @@ import * as path from "path";
 import * as vscode from "vscode";
 
 import { applyEvent, parseEventChunk } from "./events";
-import { runFiles, type RunFiles } from "./launchArgs";
+import { driverJobState } from "./driverJob";
+import { runEnvironment } from "./env";
+import {
+  orphanedJobIds,
+  runFiles,
+  type JobState,
+  type RunFiles
+} from "./launchArgs";
 import { abortUnfinished, emptyProgress, type RunProgress } from "./model";
 import { isRunAlive, readRecord, writeRecord, type RunRecord } from "./runner";
 import { applyTraceFile, parseHistory } from "./trace";
 
 export type RunStatus =
+  | "queued"
   | "starting"
   | "running"
   | "succeeded"
@@ -27,13 +35,26 @@ export type Run = {
   /** bytes of the events file already applied */
   offset: number;
   rest: string;
+  /** the driver job's last known state, for job runs */
+  jobState?: JobState;
+  jobCheckedAt?: number;
+  /** task jobs left running when a job run ended without finishing */
+  orphans?: string[];
 };
 
 const INDEX_KEY = "nextflow.positron.runs";
 const POLL_MS = 1000;
+/** how often a driver job's state is asked for, to limit Workbench API load */
+const JOB_POLL_MS = 10000;
+/** how long a just-submitted job may be missing from the job list */
+const JOB_VISIBLE_MS = 120000;
 
 export function isActive(run: Run): boolean {
-  return run.status === "starting" || run.status === "running";
+  return (
+    run.status === "queued" ||
+    run.status === "starting" ||
+    run.status === "running"
+  );
 }
 
 export class RunStore implements vscode.Disposable {
@@ -152,6 +173,27 @@ export class RunStore implements vscode.Disposable {
     }
   }
 
+  /** Is the run's driver job still queued or running? Asked every JOB_POLL_MS. */
+  private async jobAlive(run: Run): Promise<boolean> {
+    if (!run.record.jobId || run.record.finishedAt) return false;
+    const now = Date.now();
+    if (!run.jobCheckedAt || now - run.jobCheckedAt >= JOB_POLL_MS) {
+      run.jobCheckedAt = now;
+      const state = await driverJobState(
+        await runEnvironment(),
+        run.record.jobId
+      );
+      // an unreachable launcher keeps the last known state
+      if (state) run.jobState = state;
+    }
+    if (run.jobState === "missing") {
+      const age = now - Date.parse(run.record.startedAt);
+      return age < JOB_VISIBLE_MS;
+    }
+    // unknown until the launcher answers, so not ended
+    return run.jobState !== "ended";
+  }
+
   /** Read new events (or the trace file) and recompute the status. */
   private async refresh(run: Run) {
     const wasActive = isActive(run);
@@ -163,13 +205,25 @@ export class RunStore implements vscode.Disposable {
         .catch(() => "");
       applyTraceFile(run.progress, trace);
     }
-    const alive = !run.progress.finished && (await isRunAlive(run.record));
+    const alive =
+      !run.progress.finished &&
+      (run.record.mode === "job"
+        ? await this.jobAlive(run)
+        : await isRunAlive(run.record));
     if (!alive && !run.record.finishedAt) {
       run.record.finishedAt = new Date().toISOString();
       run.record.outcome = await historyOutcome(run);
       writeRecord(run.files, run.record);
     }
     run.status = statusOf(run, alive);
+    if (
+      wasActive &&
+      !isActive(run) &&
+      run.record.mode === "job" &&
+      !run.progress.finished
+    ) {
+      run.orphans = orphanedJobIds(Object.values(run.progress.tasks));
+    }
     if (!isActive(run)) abortUnfinished(run.progress);
     if (wasActive && !isActive(run)) this.finished.fire(run);
   }
@@ -228,9 +282,10 @@ function statusOf(run: Run, alive: boolean): RunStatus {
   const failure = record.stopRequested ? "stopped" : "failed";
   if (progress.finished) return progress.success ? "succeeded" : failure;
   if (alive) {
-    return progress.workflow || Object.keys(progress.tasks).length
-      ? "running"
-      : "starting";
+    if (progress.workflow || Object.keys(progress.tasks).length)
+      return "running";
+    const queued = run.jobState === "queued" || run.jobState === "missing";
+    return record.mode === "job" && queued ? "queued" : "starting";
   }
   if (record.outcome === "OK") return "succeeded";
   if (record.outcome === "ERR") return failure;

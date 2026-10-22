@@ -11,7 +11,7 @@ import { registerCommand } from "../log";
 import { isTerminal, type TaskState } from "../model";
 import { resolveTask, withRun } from "../select";
 import { isActive, type Run, type RunStore } from "../store";
-import { runDuration } from "../tree";
+import { driverLabel, runDuration } from "../tree";
 import { dashboardHtml } from "./html";
 import { isInside, readTail, readTaskDir, sectionOrder } from "./taskFiles";
 
@@ -265,6 +265,7 @@ function runData(run: Run) {
     reports,
     duration: runDuration(run),
     cluster: run.record.config.workbench?.cluster,
+    driver: driverLabel(run),
     live: isActive(run)
   };
 }

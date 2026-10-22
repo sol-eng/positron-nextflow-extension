@@ -810,6 +810,43 @@
           "type": "boolean",
           "default": true,
           "markdownDescription": "Ask for confirmation before force killing a run, cancelling a task, deleting work directories, or removing a run from the list."
+        },
+        "nextflow.run.driver": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "local",
+            "job"
+          ],
+          "enumDescriptions": [
+            "Run Nextflow as a Workbench Job when Positron runs in Posit Workbench, otherwise in this session; Run Pipeline asks each time.",
+            "Always run Nextflow in this session.",
+            "Always run Nextflow as a Workbench Job, without asking."
+          ],
+          "default": "auto",
+          "markdownDescription": "Where the Nextflow driver (`nextflow run` itself) runs. As a Workbench Job it keeps running when the session is suspended or stopped, and its tasks run with the job's own Workbench credentials."
+        },
+        "nextflow.run.headless.cluster": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Workbench cluster for the Nextflow driver job. By default the pipeline's `workbench.cluster`, or a choice from the available clusters."
+        },
+        "nextflow.run.headless.image": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Container image for the Nextflow driver job. By default the image of this session (`PWB_SESSION_CONTAINER_IMAGE`). It needs bash, `ps` and Java 17 or later; Nextflow, the nf-workbench plugin and the launcher CLI are used from the home directory."
+        },
+        "nextflow.run.headless.cpus": {
+          "type": "integer",
+          "default": 2,
+          "minimum": 1,
+          "markdownDescription": "CPUs for the Nextflow driver job."
+        },
+        "nextflow.run.headless.memory": {
+          "type": "integer",
+          "default": 4096,
+          "minimum": 1024,
+          "markdownDescription": "Memory for the Nextflow driver job, in MB. Three quarters of it is given to the JVM."
         }
       }
     },
