@@ -2,7 +2,7 @@
   "name": "positron-nextflow",
   "displayName": "Positron Nextflow",
   "description": "Nextflow language support, extended for Positron",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "publisher": "posit",
   "repository": {
     "type": "git",
@@ -798,8 +798,8 @@
         },
         "nextflow.run.eventsPlugin": {
           "type": "string",
-          "default": "nf-workbench@0.2.0",
-          "markdownDescription": "The Nextflow plugin, with version, that writes live run events (`workbench.eventsFile`). Without it only completed tasks are shown."
+          "default": "nf-workbench",
+          "markdownDescription": "The Nextflow plugin that writes live run events (`workbench.eventsFile`). Without a version, the newest installed `nf-workbench` from 0.2.0 on is used; `nf-workbench@0.3.0` pins one. Without the plugin only completed tasks are shown."
         },
         "nextflow.run.launcherCli": {
           "type": "string",

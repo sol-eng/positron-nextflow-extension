@@ -2,6 +2,7 @@
 // Kept free of `vscode` so it can be unit tested.
 
 import * as path from "path";
+import * as semver from "semver";
 
 export type LaunchConfig = {
   /** absolute path of the entry script */
@@ -276,4 +277,29 @@ export function orphanedJobIds(
   return tasks
     .filter((t) => t.nativeId && !done.has(t.status))
     .map((t) => t.nativeId!);
+}
+
+/** The oldest nf-workbench that writes run events (`workbench.eventsFile`). */
+export const MIN_EVENTS_PLUGIN = "0.2.0";
+
+/**
+ * The events plugin to load, from the `nextflow.run.eventsPlugin` setting and
+ * the plugin directories Nextflow has installed (`<id>-<version>`). A setting
+ * with a version (`nf-workbench@0.3.0`) must be installed exactly; without one
+ * (`nf-workbench`) the newest installed version from MIN_EVENTS_PLUGIN on is
+ * used. Undefined if none is installed.
+ */
+export function pickEventsPlugin(
+  setting: string,
+  installed: string[]
+): string | undefined {
+  const [id, pinned] = setting.split("@");
+  if (pinned)
+    return installed.includes(`${id}-${pinned}`) ? setting : undefined;
+  const versions = installed
+    .filter((name) => name.startsWith(`${id}-`))
+    .map((name) => name.slice(id.length + 1))
+    .filter((v) => semver.valid(v) && semver.gte(v, MIN_EVENTS_PLUGIN))
+    .sort(semver.rcompare);
+  return versions.length ? `${id}@${versions[0]}` : undefined;
 }

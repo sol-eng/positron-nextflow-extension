@@ -9,6 +9,7 @@ import {
   buildRunArgs,
   orphanedJobIds,
   parseJobStatus,
+  pickEventsPlugin,
   resolveDriverMode,
   buildRunConfig,
   isNextflowRun,
@@ -370,4 +371,28 @@ test("finds the task jobs a run left behind", () => {
     ]),
     ["1", "2"]
   );
+});
+
+test("uses the newest installed events plugin unless one is pinned", () => {
+  const installed = [
+    "nf-workbench-0.1.0",
+    "nf-workbench-0.3.0",
+    "nf-workbench-0.2.0",
+    "nf-schema-2.5.1"
+  ];
+  assert.equal(
+    pickEventsPlugin("nf-workbench", installed),
+    "nf-workbench@0.3.0"
+  );
+  assert.equal(
+    pickEventsPlugin("nf-workbench@0.2.0", installed),
+    "nf-workbench@0.2.0"
+  );
+  assert.equal(pickEventsPlugin("nf-workbench@0.4.0", installed), undefined);
+  // 0.1.0 writes no events
+  assert.equal(
+    pickEventsPlugin("nf-workbench", ["nf-workbench-0.1.0"]),
+    undefined
+  );
+  assert.equal(pickEventsPlugin("nf-workbench", []), undefined);
 });

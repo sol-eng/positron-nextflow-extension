@@ -4,7 +4,9 @@ All notable changes to Positron Nextflow are documented here. See [Keep a Change
 
 Positron Nextflow is a fork of the [Nextflow extension for VS Code](https://github.com/nextflow-io/vscode-language-nextflow). Each release lists the upstream revision it is based on; see upstream's [changelog](https://github.com/nextflow-io/vscode-language-nextflow/blob/main/CHANGELOG.md) for the changes in those releases.
 
-## [Unreleased]
+## [0.2.0] - 2026-10-23
+
+Based on upstream [1.8.1](https://github.com/nextflow-io/vscode-language-nextflow/releases/tag/v1.8.1), at [`c149b5f`](https://github.com/nextflow-io/vscode-language-nextflow/commit/c149b5f), as 0.1.1 was.
 
 ### Added
 
@@ -24,6 +26,7 @@ Positron Nextflow is a fork of the [Nextflow extension for VS Code](https://gith
 
 ### Changed
 
+- The newest installed nf-workbench plugin, from 0.2.0 on, is used for live run status, instead of exactly 0.2.0. The `nextflow.run.eventsPlugin` setting can still pin a version, e.g. `nf-workbench@0.3.0`.
 - The Seqera Cloud view is hidden in Positron. It is still shown in VS Code.
 
 ### Fixed

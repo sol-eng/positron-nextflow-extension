@@ -9,7 +9,7 @@ import * as semver from "semver";
 import * as vscode from "vscode";
 
 import { findExecutable } from "../../languageServer/utils/findExecutable";
-import { parseNextflowVersion } from "./launchArgs";
+import { parseNextflowVersion, pickEventsPlugin } from "./launchArgs";
 
 export const MIN_NEXTFLOW_VERSION = "25.10.0";
 
@@ -19,6 +19,7 @@ export type RunEnvironment = {
   /** the environment runs are started with */
   env: NodeJS.ProcessEnv;
   java?: string;
+  /** the events plugin with its version, or the setting if none is installed */
   eventsPlugin: string;
   eventsPluginInstalled: boolean;
   launcherCli: string;
@@ -78,14 +79,15 @@ async function resolve(): Promise<RunEnvironment> {
     problems.push("Nextflow was not found.");
   }
 
-  const eventsPlugin = runSetting("eventsPlugin", "nf-workbench@0.2.0");
+  const eventsSetting = runSetting("eventsPlugin", "nf-workbench");
+  const eventsPlugin = pickEventsPlugin(eventsSetting, installedPlugins(env));
   return {
     nextflow,
     version,
     env,
     java,
-    eventsPlugin,
-    eventsPluginInstalled: isPluginInstalled(env, eventsPlugin),
+    eventsPlugin: eventsPlugin ?? eventsSetting,
+    eventsPluginInstalled: eventsPlugin !== undefined,
     launcherCli: runSetting("launcherCli", "posit-workbench-nf-launcher"),
     inWorkbench: !!(env.RS_SERVER_URL || env.POSIT_PRODUCT),
     problems
@@ -162,19 +164,15 @@ function javaMajor(java: string, env: NodeJS.ProcessEnv): number {
   }
 }
 
-function isPluginInstalled(env: NodeJS.ProcessEnv, plugin: string): boolean {
-  const [id, version] = plugin.split("@");
+/** The plugin directories Nextflow has installed, e.g. `nf-workbench-0.3.0`. */
+function installedPlugins(env: NodeJS.ProcessEnv): string[] {
   const dir =
     env.NXF_PLUGINS_DIR ??
     path.join(env.NXF_HOME ?? path.join(os.homedir(), ".nextflow"), "plugins");
   try {
-    return fs
-      .readdirSync(dir)
-      .some((name) =>
-        version ? name === `${id}-${version}` : name.startsWith(`${id}-`)
-      );
+    return fs.readdirSync(dir);
   } catch {
-    return false;
+    return [];
   }
 }
 
