@@ -6,6 +6,10 @@ A fork of the [Nextflow extension for VS Code](https://github.com/nextflow-io/vs
   <img width="960" height="582" alt="Positron Nextflow: running the rnaseq pipeline from Positron, following its tasks in Pipeline Runs, and opening its report in the Viewer" src="https://github.com/user-attachments/assets/81cafe0c-ce60-4563-8e41-82a7b02c7ab9" />
 </p>
 
+**Watch the full demo (2 min):**
+
+https://github.com/user-attachments/assets/6b08e71e-bf4b-46c1-ba77-d24dc28aadeb
+
 ## Positron
 
 In Positron the extension adds:
