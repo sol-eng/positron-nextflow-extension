@@ -69,4 +69,4 @@ Based on upstream 1.8.0 plus two dependency updates, at [`d5061af`](https://gith
 
 - The extension ID is `posit.positron-nextflow`. It stays inactive while the official `nextflow.nextflow` extension is installed.
 
-Live status needs the nf-workbench plugin 0.2.0 or later, from [posit-sdk-nextflow](https://github.com/michaelmayer2/posit-sdk-nextflow).
+Live status needs the nf-workbench plugin 0.2.0 or later, from [posit-sdk-nextflow](https://github.com/sol-eng/posit-sdk-nextflow).
