@@ -7,7 +7,7 @@ A fork of the [Nextflow extension for VS Code](https://github.com/nextflow-io/vs
 In Positron the extension adds:
 
 - **Run and manage pipelines.** The **Pipeline Runs** view in the Nextflow sidebar runs a pipeline (the ▶ button on a `.nf` file, or **Nextflow: Run Pipeline...**), asking for the profiles, parameters and, when the pipeline uses the [nf-workbench](https://github.com/sol-eng/posit-sdk-nextflow) executor, the Posit Workbench cluster and resource profile. It then follows the run live, per process and task.
-  - **Stop** a run (Nextflow cancels its tasks, including Workbench jobs), **Force Kill** it, **Resume** it from its cached tasks, **Run Again**, or **Clean** its work directories.
+  - **Stop** a run (Nextflow cancels its tasks, including Workbench jobs), **Force Kill** it, **Resume** it from its cached tasks, **Run Again**, or **Clean** its work directories. **Delete Run** removes one or more selected runs together with their logs, reports and work directories; published results are kept.
   - Click a task to open its **dashboard** in the Viewer: its status and resource use, its logs and script as labelled sections, and its outputs and inputs (HTML outputs such as FastQC reports open in the Viewer). A run's dashboard button shows per-process progress and failed tasks with their errors.
   - **Cancel** a single task, open the files in its work directory, or **Debug Task in Console**. This sets the R or Python console's working directory to the task's work directory, where its inputs are staged, and opens the task's resolved script, with Nextflow variables substituted, to step through.
   - Open a run's report, timeline and DAG in the Viewer, and its trace in the Data Explorer.

@@ -33,7 +33,13 @@ import { trackOutputTerminals, showOutput } from "./output";
 import { processCommand, signalRun, startRun, type RunRecord } from "./runner";
 import { isActive, RunStore, type Run } from "./store";
 import { output, reportErrors } from "./log";
-import { describeArg, resolveTask, resolveUri, withRun } from "./select";
+import {
+  describeArg,
+  resolveRun,
+  resolveTask,
+  resolveUri,
+  withRun
+} from "./select";
 import { parseHistory } from "./trace";
 import { RunsTreeProvider, runDuration } from "./tree";
 
@@ -46,7 +52,9 @@ export function activateRuns(context: vscode.ExtensionContext): RunStore {
   const tree = new RunsTreeProvider(store);
   const view = vscode.window.createTreeView("nextflow.runs", {
     treeDataProvider: tree,
-    showCollapseAll: true
+    showCollapseAll: true,
+    // to delete several runs at once
+    canSelectMany: true
   });
   const statusBar = vscode.window.createStatusBarItem(
     vscode.StatusBarAlignment.Left,
@@ -90,6 +98,24 @@ export function activateRuns(context: vscode.ExtensionContext): RunStore {
       withRun(store, node, (run) => openFile(run.files.log)),
     "nextflow.positron.runs.remove": (node?: unknown) =>
       withRun(store, node, (run) => removeRun(store, run)),
+    // the second argument is the tree's selection, to delete several runs
+    "nextflow.positron.runs.delete": async (
+      node?: unknown,
+      selected?: unknown
+    ) => {
+      const picked = (
+        Array.isArray(selected) && selected.length ? selected : [node]
+      )
+        .map((n) => resolveRun(store, n))
+        .filter((r): r is Run => !!r);
+      if (picked.length) return deleteRuns(store, [...new Set(picked)]);
+      return withRun(
+        store,
+        undefined,
+        (run) => deleteRuns(store, [run]),
+        (r) => !isActive(r)
+      );
+    },
     "nextflow.positron.runs.cancelTask": (node?: unknown) =>
       withTask(store, node, ({ run, task }) => cancelTask(run, task)),
     "nextflow.positron.runs.showTaskFiles": (node?: unknown) =>
@@ -523,6 +549,135 @@ async function cleanRun(run: Run) {
   } catch (e) {
     vscode.window.showErrorMessage(`nextflow clean failed: ${e}`);
   }
+}
+
+/**
+ * The work directories `nextflow clean` would delete for a run now. It leaves
+ * out those that other runs still use, so this can be empty for a run that
+ * still holds references to shared work directories.
+ */
+async function workDirsToClean(
+  environment: RunEnvironment,
+  run: Run
+): Promise<string[]> {
+  try {
+    const preview = await execFile(
+      environment.nextflow!,
+      ["clean", "-n", run.record.runName],
+      {
+        cwd: run.record.config.cwd,
+        env: environment.env
+      }
+    );
+    return preview.split("\n").filter((l) => l.trim());
+  } catch {
+    // not in Nextflow's history, e.g. a driver that failed before it started
+    return [];
+  }
+}
+
+/**
+ * Remove runs from the list and delete their logs and reports and, with
+ * `nextflow clean`, their work directories. Nextflow keeps a work directory
+ * that another run still uses (e.g. through -resume) until that run is
+ * cleaned too. Published results (publishDir) are not touched: other runs
+ * may have published to the same place.
+ */
+async function deleteRuns(store: RunStore, runs: Run[]) {
+  const active = runs.filter(isActive);
+  if (active.length) {
+    vscode.window.showInformationMessage(
+      `Stop ${active.map((r) => r.record.runName).join(", ")} before deleting ${active.length === 1 ? "it" : "them"}.`
+    );
+  }
+  const targets = runs.filter((r) => !isActive(r));
+  if (!targets.length) return;
+
+  const environment = await runEnvironment();
+  const canClean = !!environment.nextflow && !environment.problems.length;
+  const workDirs = new Map<Run, string[]>();
+  if (canClean) {
+    await withProgressNotification(
+      "Finding the runs' work directories...",
+      async () => {
+        for (const run of targets)
+          workDirs.set(run, await workDirsToClean(environment, run));
+      }
+    );
+  }
+  const dirCount = [...workDirs.values()].reduce(
+    (n, dirs) => n + dirs.length,
+    0
+  );
+  const names = targets.map((r) => r.record.runName);
+  const what = targets.length === 1 ? names[0] : `${targets.length} runs`;
+  const confirmed = await confirm(
+    `Delete ${what}?`,
+    "Delete",
+    [
+      `This removes ${targets.length === 1 ? "it" : "them"} from Pipeline Runs and deletes ${targets.length === 1 ? "its" : "their"} logs and reports` +
+        (canClean
+          ? `${dirCount ? ` and ${dirCount} task work director${dirCount === 1 ? "y" : "ies"}` : ""}.`
+          : ". Work directories are kept: Nextflow is not available to clean them."),
+      "Published results (e.g. publishDir) are kept, and so are work directories that other runs still use.",
+      ...(targets.length > 1 ? ["", ...names] : [])
+    ].join("\n")
+  );
+  if (!confirmed) return;
+
+  const failed: string[] = [];
+  for (const run of targets) {
+    try {
+      // even with nothing to delete now, cleaning releases the run's
+      // references, so the last run that shares a work directory deletes it
+      if (canClean && (await inHistory(run))) {
+        await execFile(
+          environment.nextflow!,
+          ["clean", "-f", run.record.runName],
+          {
+            cwd: run.record.config.cwd,
+            env: environment.env
+          }
+        );
+      }
+      await fs.promises.rm(run.files.dir, { recursive: true, force: true });
+      store.remove(run);
+    } catch (e) {
+      failed.push(
+        `${run.record.runName}: ${e instanceof Error ? e.message : e}`
+      );
+    }
+  }
+  if (failed.length) {
+    vscode.window.showErrorMessage(
+      `Could not delete ${failed.length} run(s). If another run in the same launch directory is active, Nextflow's cache is locked until it ends.`,
+      { modal: true, detail: failed.join("\n") }
+    );
+  }
+  const deleted = targets.length - failed.length;
+  if (deleted) {
+    vscode.window.setStatusBarMessage(
+      `Deleted ${deleted === 1 ? names[0] : `${deleted} runs`}.`,
+      5000
+    );
+  }
+}
+
+async function inHistory(run: Run): Promise<boolean> {
+  const text = await fs.promises
+    .readFile(path.join(run.record.config.cwd, ".nextflow", "history"), "utf8")
+    .catch(() => "");
+  return parseHistory(text).some((e) => e.runName === run.record.runName);
+}
+
+function withProgressNotification<T>(
+  title: string,
+  task: () => Promise<T>
+): Thenable<T> {
+  return vscode.window.withProgress(
+    { location: vscode.ProgressLocation.Notification, title },
+    task
+  );
 }
 
 async function removeRun(store: RunStore, run: Run) {

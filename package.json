@@ -337,6 +337,12 @@
         "title": "Open Run Dashboard",
         "category": "Nextflow",
         "icon": "$(dashboard)"
+      },
+      {
+        "command": "nextflow.positron.runs.delete",
+        "title": "Delete Run...",
+        "category": "Nextflow",
+        "icon": "$(trash)"
       }
     ],
     "keybindings": [
@@ -461,6 +467,10 @@
         },
         {
           "command": "nextflow.positron.runs.showRunDashboard",
+          "when": "isPositron"
+        },
+        {
+          "command": "nextflow.positron.runs.delete",
           "when": "isPositron"
         }
       ],
@@ -597,6 +607,11 @@
           "command": "nextflow.positron.runs.remove",
           "when": "view == nextflow.runs && viewItem =~ /^run\\.(succeeded|failed|stopped|lost)$/",
           "group": "3_manage@2"
+        },
+        {
+          "command": "nextflow.positron.runs.delete",
+          "when": "view == nextflow.runs && viewItem =~ /^run\\.(succeeded|failed|stopped|lost)$/",
+          "group": "3_manage@3"
         },
         {
           "command": "nextflow.positron.runs.cancelTask",

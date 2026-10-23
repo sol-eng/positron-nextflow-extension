@@ -4,6 +4,12 @@ All notable changes to Positron Nextflow are documented here. See [Keep a Change
 
 Positron Nextflow is a fork of the [Nextflow extension for VS Code](https://github.com/nextflow-io/vscode-language-nextflow). Each release lists the upstream revision it is based on; see upstream's [changelog](https://github.com/nextflow-io/vscode-language-nextflow/blob/main/CHANGELOG.md) for the changes in those releases.
 
+## [Unreleased]
+
+### Added
+
+- Delete Run, in a finished run's context menu: removes the run from Pipeline Runs and deletes its logs, reports and task work directories (with `nextflow clean`). Select several runs to delete them at once. Work directories that other runs still use, e.g. through resume, are kept until those runs are deleted too, and published results (publishDir) are never touched.
+
 ## [0.2.0] - 2026-10-23
 
 Based on upstream [1.8.1](https://github.com/nextflow-io/vscode-language-nextflow/releases/tag/v1.8.1), at [`c149b5f`](https://github.com/nextflow-io/vscode-language-nextflow/commit/c149b5f), as 0.1.1 was.
