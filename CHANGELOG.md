@@ -8,7 +8,7 @@ Positron Nextflow is a fork of the [Nextflow extension for VS Code](https://gith
 
 ### Added
 
-- Delete Run, in a finished run's context menu: removes the run from Pipeline Runs and deletes its logs, reports and task work directories (with `nextflow clean`). Select several runs to delete them at once. Work directories that other runs still use, e.g. through resume, are kept until those runs are deleted too, and published results (publishDir) are never touched.
+- Delete Run, as a trash button on a finished run and in its context menu: removes the run from Pipeline Runs and deletes its logs, reports and task work directories (with `nextflow clean`). Select several runs to delete them at once. Work directories that other runs still use, e.g. through resume, are kept until those runs are deleted too, and published results (publishDir) are never touched.
 
 ## [0.2.0] - 2026-10-23
 

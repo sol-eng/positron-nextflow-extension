@@ -667,6 +667,11 @@
           "command": "nextflow.positron.runs.debugTask",
           "when": "view == nextflow.runs && viewItem =~ /^task\\..*\\.workdir$/",
           "group": "1_task@0"
+        },
+        {
+          "command": "nextflow.positron.runs.delete",
+          "when": "view == nextflow.runs && viewItem =~ /^run\\.(succeeded|failed|stopped|lost)$/",
+          "group": "inline@9"
         }
       ],
       "editor/title": [
