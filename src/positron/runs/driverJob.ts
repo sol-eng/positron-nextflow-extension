@@ -5,6 +5,7 @@
 // operations needed; another scheduler (e.g. Slurm) would provide the same.
 
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 
 import { execFile, type RunEnvironment } from "./env";
@@ -45,6 +46,9 @@ export async function submitDriverJob(
       args: buildRunArgs(record.config, files, record.runName, plugins),
       cwd: record.config.cwd,
       output: files.output,
+      home: os.homedir(),
+      user: os.userInfo().username,
+      nxfHome: environment.env.NXF_HOME ?? path.join(os.homedir(), ".nextflow"),
       xmxMb: heapMb(options.memoryMb),
       javaHome: options.javaHome
     }),

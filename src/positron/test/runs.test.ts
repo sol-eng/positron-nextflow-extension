@@ -281,14 +281,16 @@ test("parses the version and recognises its own process", () => {
   assert.ok(!isNextflowRun("vim main-1", "main-1"));
 });
 
-test("builds a driver script that bash runs with the exact arguments", () => {
+test("builds a driver script that runs without a HOME, as in a job container", () => {
   const dir = fs.mkdtempSync(path.join(require("os").tmpdir(), "nf-driver-"));
   try {
+    const home = path.join(dir, "home dir");
+    fs.mkdirSync(path.join(home, ".local", "bin"), { recursive: true });
     // a stand-in for nextflow that records how it was called
     const fake = path.join(dir, "fake nextflow");
     fs.writeFileSync(
       fake,
-      '#!/bin/bash\nprintf "%s\\n" "$PWD" "$NXF_OPTS" "$@"\n',
+      '#!/bin/bash\nprintf "%s\\n" "$PWD" "$HOME" "$USER" "$LOGNAME" "$NXF_HOME" "${PATH%%:*}" "$NXF_OPTS" "$@"\n',
       { mode: 0o755 }
     );
     const script = buildDriverScript({
@@ -296,18 +298,32 @@ test("builds a driver script that bash runs with the exact arguments", () => {
       args: ["run", "main.nf", "--input", "my samples.csv", "--note", "it's"],
       cwd: dir,
       output: path.join(dir, "output.log"),
+      home,
+      user: "michael",
+      nxfHome: path.join(home, ".nextflow"),
       xmxMb: 3072
     });
     assert.match(script, /^#!\/bin\/bash\n/);
     assert.match(script, /\nexec '/);
     const driver = path.join(dir, "driver.sh");
     fs.writeFileSync(driver, script, { mode: 0o755 });
-    require("child_process").execFileSync("/bin/bash", [driver]);
+    // an empty environment: no HOME, USER or PATH, like a job whose uid has no passwd entry
+    require("child_process").execFileSync("/usr/bin/env", [
+      "-i",
+      "/bin/bash",
+      driver
+    ]);
     const lines = fs
       .readFileSync(path.join(dir, "output.log"), "utf8")
       .trimEnd()
       .split("\n");
+    assert.equal(fs.realpathSync(lines[0]), fs.realpathSync(dir));
     assert.deepEqual(lines.slice(1), [
+      home,
+      "michael",
+      "michael",
+      path.join(home, ".nextflow"),
+      path.join(home, ".local", "bin"),
       "-Xms512m -Xmx3072m",
       "run",
       "main.nf",
@@ -316,7 +332,6 @@ test("builds a driver script that bash runs with the exact arguments", () => {
       "--note",
       "it's"
     ]);
-    assert.equal(fs.realpathSync(lines[0]), fs.realpathSync(dir));
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

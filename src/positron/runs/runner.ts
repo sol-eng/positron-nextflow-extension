@@ -37,6 +37,8 @@ export type RunRecord = {
   finishedAt?: string;
   /** the run's outcome in `.nextflow/history` */
   outcome?: string;
+  /** why a driver job ended before Nextflow reported anything */
+  driverError?: string;
   stopRequested?: "stop" | "kill";
 };
 

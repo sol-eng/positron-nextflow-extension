@@ -6,6 +6,7 @@ import * as path from "path";
 import * as vscode from "vscode";
 
 import { applyEvent, parseEventChunk } from "./events";
+import { readTail } from "./dashboard/taskFiles";
 import { driverJobState } from "./driverJob";
 import { runEnvironment } from "./env";
 import {
@@ -213,7 +214,17 @@ export class RunStore implements vscode.Disposable {
     if (!alive && !run.record.finishedAt) {
       run.record.finishedAt = new Date().toISOString();
       run.record.outcome = await historyOutcome(run);
+      if (
+        run.record.mode === "job" &&
+        !run.record.outcome &&
+        !hasStarted(run)
+      ) {
+        run.record.driverError = driverError(run);
+      }
       writeRecord(run.files, run.record);
+    }
+    if (run.record.driverError) {
+      run.progress.errorMessage ??= run.record.driverError;
     }
     run.status = statusOf(run, alive);
     if (
@@ -277,6 +288,31 @@ async function historyOutcome(run: Run): Promise<string | undefined> {
   return entry && entry.status !== "-" ? entry.status : undefined;
 }
 
+/** Has Nextflow reported anything about the run? */
+function hasStarted(run: Run): boolean {
+  return !!run.progress.workflow || Object.keys(run.progress.tasks).length > 0;
+}
+
+/** A driver job that ended before Nextflow started: its output says why. */
+function driverError(run: Run): string {
+  let output = "";
+  try {
+    output = readTail(run.files.output, 8 * 1024)
+      .text.trimEnd()
+      .split("\n")
+      .slice(-15)
+      .join("\n");
+  } catch {
+    // no output at all
+  }
+  return (
+    "The Nextflow driver job ended before the run started." +
+    (output
+      ? `\n\n${output}`
+      : " It wrote no output; check the job in the Workbench Jobs UI.")
+  );
+}
+
 function statusOf(run: Run, alive: boolean): RunStatus {
   const { progress, record } = run;
   const failure = record.stopRequested ? "stopped" : "failed";
@@ -288,6 +324,6 @@ function statusOf(run: Run, alive: boolean): RunStatus {
     return record.mode === "job" && queued ? "queued" : "starting";
   }
   if (record.outcome === "OK") return "succeeded";
-  if (record.outcome === "ERR") return failure;
+  if (record.outcome === "ERR" || record.driverError) return failure;
   return record.stopRequested ? "stopped" : "lost";
 }

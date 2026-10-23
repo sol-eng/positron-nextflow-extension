@@ -24,6 +24,8 @@ Positron Nextflow is a fork of the [Nextflow extension for VS Code](https://gith
 
 ### Fixed
 
+- Headless runs failed at once on Kubernetes with `mkdir: cannot create directory '//.nextflow'`: the driver job's user has no home directory in the container. The driver now sets `HOME`, `USER`, `LOGNAME`, `NXF_HOME` and its `PATH` from the session, as nf-workbench does for task jobs.
+- A driver job that ends before Nextflow starts is shown as failed, with the end of its output as the error, instead of as lost.
 - Force Kill no longer sends a run's local task processes to the Workbench launcher to be cancelled as jobs.
 
 ## [0.1.1] - 2026-10-22

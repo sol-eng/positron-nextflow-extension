@@ -1,0 +1,35 @@
+  To test on Workbench:
+  1. Install dev.9, and keep the launcher from the headless branch (needed for the graceful
+     stop).
+  2. Run examples/rnaseq and choose As a Workbench Job. Within a few seconds you should see
+     nf-driver-… and then the nf-* task jobs in the Jobs UI.
+  3. Stop the session, wait a bit, and start a new one. Pipeline Runs should show the run still
+     running, or finished, with the reports and dashboards working.
+  4. Try Stop on a second headless run: the driver and its task jobs should end. Then try Force 
+     Kill on a third: leftover task jobs should be cancelled within a few seconds.
+
+  Two limits to know:
+  - Credential lifetime: the job's credentials last 7 days, so a headless run can't run longer
+    than that.
+  - Image requirements: the driver image needs bash, ps and Java 17 or later. Nextflow, the
+    plugin and the launcher come from your home directory, so the session image is fine.
+
+  On posit-sdk-nextflow, PR #3 now also documents that driver jobs started from a session need no
+  credentials. Once your Workbench test passes, I'd merge it and release the launcher as 0.3.0.
+
+✻ Brewed for 14m 18s · done 3:00 PM
+
+❯ awesome - we then also can probably release the extension as version 0.2.0 - but one step at a 
+  time                                                                                           
+  
+⏺ Agreed, one step at a time. Here's the order I'd go in:
+
+  1. You test headless on Workbench with dev.9 and the headless-branch launcher, using the four
+     steps above.
+  2. I merge PR #3 and release posit-sdk-nextflow 0.3.0. That means bumping the plugin and
+     launcher to 0.3.0, dating the changelog, tagging and attaching the artifacts, as for 0.2.0.
+  3. I release the extension as 0.2.0. I'll set the version, turn "Unreleased" into the 0.2.0
+     entry (dashboards and headless runs), tag it and attach the VSIX, then bump main to 0.2.1
+     for pre-releases. Its notes will say Stop needs launcher 0.3.0 to be graceful.
+
+  Send me the results of step 1, or anything that breaks, and I'll take it from there.
