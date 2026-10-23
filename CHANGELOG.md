@@ -22,6 +22,10 @@ Positron Nextflow is a fork of the [Nextflow extension for VS Code](https://gith
 - Run dashboard in the Viewer, from the dashboard button on a run.
   - It shows per-process progress, failed tasks with the end of their error output, the running tasks, and links to the report, timeline, DAG and trace.
 
+### Changed
+
+- The Seqera Cloud view is hidden in Positron. It is still shown in VS Code.
+
 ### Fixed
 
 - Headless runs failed at once on Kubernetes with `mkdir: cannot create directory '//.nextflow'`: the driver job's user has no home directory in the container. The driver now sets `HOME`, `USER`, `LOGNAME`, `NXF_HOME` and its `PATH` from the session, as nf-workbench does for task jobs.

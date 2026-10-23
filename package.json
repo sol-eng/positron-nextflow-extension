@@ -875,7 +875,8 @@
         {
           "id": "seqeraCloud",
           "name": "Seqera Cloud",
-          "type": "webview"
+          "type": "webview",
+          "when": "!isPositron"
         },
         {
           "id": "resources",
