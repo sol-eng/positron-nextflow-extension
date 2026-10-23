@@ -28,6 +28,7 @@ Based on upstream [1.8.1](https://github.com/nextflow-io/vscode-language-nextflo
 
 - The newest installed nf-workbench plugin, from 0.2.0 on, is used for live run status, instead of exactly 0.2.0. The `nextflow.run.eventsPlugin` setting can still pin a version, e.g. `nf-workbench@0.3.0`.
 - The Seqera Cloud view is hidden in Positron. It is still shown in VS Code.
+- The project moved to the [sol-eng](https://github.com/sol-eng/positron-nextflow-extension) GitHub organisation, as did [posit-sdk-nextflow](https://github.com/sol-eng/posit-sdk-nextflow).
 
 ### Fixed
 
