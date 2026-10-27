@@ -2,7 +2,7 @@
   "name": "positron-nextflow",
   "displayName": "Positron Nextflow",
   "description": "Nextflow language support, extended for Positron",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "publisher": "posit",
   "repository": {
     "type": "git",
