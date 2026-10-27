@@ -4,6 +4,17 @@ All notable changes to Positron Nextflow are documented here. See [Keep a Change
 
 Positron Nextflow is a fork of the [Nextflow extension for VS Code](https://github.com/nextflow-io/vscode-language-nextflow). Each release lists the upstream revision it is based on; see upstream's [changelog](https://github.com/nextflow-io/vscode-language-nextflow/blob/main/CHANGELOG.md) for the changes in those releases.
 
+## [Unreleased]
+
+### Added
+
+- Posit Assistant (Positron 2026.07 and later) can use the extension: a bundled `nextflow-runs` skill, registered with `positron.ai.registerAgentSkillRoot`, and agent-compatible `nextflow.positron.assistant.*` commands it runs with its `positronCommand` tool. Posit Assistant does not use VS Code language model tools, which remain for other assistants.
+- A button back to the run's dashboard on its report, timeline and DAG, and back to the task's dashboard on a task's HTML output. They open in a Viewer panel of the extension's own, without the default webview styles Positron adds.
+
+### Changed
+
+- The DAG is drawn with the bundled mermaid instead of loading it from a CDN, so it also shows without internet access.
+
 ## [0.2.1] - 2026-10-23
 
 Based on upstream [1.8.1](https://github.com/nextflow-io/vscode-language-nextflow/releases/tag/v1.8.1), at [`c149b5f`](https://github.com/nextflow-io/vscode-language-nextflow/commit/c149b5f), as 0.2.0 was.

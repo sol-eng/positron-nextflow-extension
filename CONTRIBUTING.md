@@ -59,7 +59,7 @@ The run manager lives in `src/positron/runs/`. Its pure parts (the event reducer
 
 Every push to `main` publishes a pre-release with the VSIX, numbered `<version>-dev.<run>` (see `.github/workflows/prerelease.yml`); the last five are kept. To release, set the version in `package.json`, add a `CHANGELOG.md` entry noting the upstream base, tag `v<version>` and create a GitHub release with the VSIX. Then bump `package.json` to the next patch version, so pre-releases sort after the release.
 
-Run the unit tests for `src/positron` with `npm run test:positron`, and build and install into Positron with `make install`. `make test` launches Positron with the extension loaded; set `EDITOR_CLI` to use another editor.
+Run the unit tests for `src/positron` with `npm run test:positron`, and build and install into Positron with `make install`. `make e2e` drives the extension in Positron against `test-e2e/pipeline`, with a throwaway profile (set `NEXTFLOW` and `JAVA_HOME`; see `test-e2e/run.sh`). `make test` launches Positron with the extension loaded; set `EDITOR_CLI` to use another editor.
 
 Upstream's tags are fetched as `upstream/v*`, because its version numbers overlap the fork's own `v*` tags:
 

@@ -19,3 +19,7 @@ test: compile
 
 install: all
 	"$(EDITOR_CLI)" --install-extension build/positron-nextflow.vsix
+
+# drive the extension in Positron against test-e2e/pipeline (see test-e2e/run.sh)
+e2e: compile
+	test-e2e/run.sh

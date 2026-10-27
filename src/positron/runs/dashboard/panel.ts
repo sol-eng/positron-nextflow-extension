@@ -12,6 +12,7 @@ import { isTerminal, type TaskState } from "../model";
 import { resolveTask, withRun } from "../select";
 import { isActive, type Run, type RunStore } from "../store";
 import { driverLabel, runDuration } from "../tree";
+import type { HtmlViewer } from "../htmlViewer";
 import { dashboardHtml } from "./html";
 import { isInside, readTail, readTaskDir, sectionOrder } from "./taskFiles";
 
@@ -32,7 +33,8 @@ export class Dashboard implements vscode.Disposable {
 
   constructor(
     private readonly api: PositronApi,
-    private readonly store: RunStore
+    private readonly store: RunStore,
+    private readonly viewer: HtmlViewer
   ) {
     this.subscription = store.onDidChange((run) => {
       if (this.view && (!run || run.files.dir === this.view.dir))
@@ -147,7 +149,13 @@ export class Dashboard implements vscode.Disposable {
     if (!allowed || !fs.existsSync(file)) return;
     const ext = path.extname(file).toLowerCase();
     if (ext === ".html" || ext === ".htm") {
-      this.api.window.previewHtml(fs.realpathSync(file));
+      // e.g. a FastQC or MultiQC report, with a way back to this task
+      this.viewer.show({
+        file: fs.realpathSync(file),
+        title: path.basename(file),
+        backLabel: `\u2190 ${task ? task.name : run.record.runName}`,
+        onBack: () => (task ? this.showTask(run, task) : this.showRun(run))
+      });
     } else if (DATA_EXPLORER_EXTENSIONS.includes(ext)) {
       await vscode.commands.executeCommand(
         "nextflow.positron.openInDataExplorer",
@@ -284,9 +292,10 @@ function stderrHead(workdir: string): string | undefined {
 export function activateDashboard(
   context: vscode.ExtensionContext,
   api: PositronApi,
-  store: RunStore
+  store: RunStore,
+  viewer: HtmlViewer
 ) {
-  const dashboard = new Dashboard(api, store);
+  const dashboard = new Dashboard(api, store, viewer);
   context.subscriptions.push(
     dashboard,
     registerCommand("nextflow.positron.runs.showTask", (node?: unknown) => {

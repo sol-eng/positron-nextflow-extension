@@ -343,6 +343,107 @@
         "title": "Delete Run...",
         "category": "Nextflow",
         "icon": "$(trash)"
+      },
+      {
+        "command": "nextflow.positron.assistant.listRuns",
+        "title": "List Pipeline Runs (for the Assistant)",
+        "category": "Nextflow",
+        "agent": {
+          "description": "List the Nextflow pipeline runs started from Positron in this workspace, most recent first, with their status, entry script, profiles, times and task totals.",
+          "returns": "JSON array of runs: runName, status, script, profiles, startedAt, finishedAt, totals.",
+          "readOnly": true
+        }
+      },
+      {
+        "command": "nextflow.positron.assistant.runStatus",
+        "title": "Show Pipeline Run Status (for the Assistant)",
+        "category": "Nextflow",
+        "agent": {
+          "description": "Detailed status of one Nextflow pipeline run: per-process task counts, Nextflow's error report, running tasks with their job ids, and every failed task with its exit code, work directory and the end of its stderr (.command.err). Use it to explain why a run failed.",
+          "args": [
+            {
+              "name": "runName",
+              "description": "Name of the run, as listRuns lists it. Defaults to the most recent run.",
+              "required": false,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "returns": "JSON object describing the run; failedTasks[].stderr has the end of each failed task's stderr.",
+          "readOnly": true
+        }
+      },
+      {
+        "command": "nextflow.positron.assistant.launchPipeline",
+        "title": "Launch Pipeline (for the Assistant)",
+        "category": "Nextflow",
+        "agent": {
+          "description": "Start a Nextflow pipeline run, or resume an earlier one, that appears in Positron's Pipeline Runs view.",
+          "args": [
+            {
+              "name": "launch",
+              "description": "What to run. Only script is required.",
+              "required": true,
+              "schema": {
+                "type": "object",
+                "required": [
+                  "script"
+                ],
+                "properties": {
+                  "script": {
+                    "type": "string",
+                    "description": "Path of the pipeline's entry script (e.g. main.nf), absolute or relative to the workspace folder."
+                  },
+                  "profiles": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Config profiles to use, e.g. [\"test\", \"docker\"]."
+                  },
+                  "params": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": [
+                        "string",
+                        "number",
+                        "boolean"
+                      ]
+                    },
+                    "description": "Pipeline parameters, as given with --name value on the command line."
+                  },
+                  "resumeRunName": {
+                    "type": "string",
+                    "description": "Resume this earlier run, reusing its cached tasks."
+                  }
+                }
+              }
+            }
+          ],
+          "returns": "JSON object with the new run's runName and status, or an error.",
+          "readOnly": false
+        }
+      },
+      {
+        "command": "nextflow.positron.assistant.stopRun",
+        "title": "Stop Pipeline Run (for the Assistant)",
+        "category": "Nextflow",
+        "agent": {
+          "description": "Stop a running Nextflow pipeline run gracefully: Nextflow cancels its running tasks, including Posit Workbench jobs, and exits.",
+          "args": [
+            {
+              "name": "runName",
+              "description": "Name of the run, as listRuns lists it. Defaults to the most recent run.",
+              "required": false,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "returns": "JSON object with the runName and stopping: true, or an error.",
+          "readOnly": false
+        }
       }
     ],
     "keybindings": [
@@ -472,6 +573,22 @@
         {
           "command": "nextflow.positron.runs.delete",
           "when": "isPositron"
+        },
+        {
+          "command": "nextflow.positron.assistant.listRuns",
+          "when": "false"
+        },
+        {
+          "command": "nextflow.positron.assistant.runStatus",
+          "when": "false"
+        },
+        {
+          "command": "nextflow.positron.assistant.launchPipeline",
+          "when": "false"
+        },
+        {
+          "command": "nextflow.positron.assistant.stopRun",
+          "when": "false"
         }
       ],
       "editor/context": [

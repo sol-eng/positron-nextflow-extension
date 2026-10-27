@@ -1,10 +1,11 @@
-// Opens a run's HTML reports in Positron's Viewer pane, and its trace in the
-// Data Explorer.
+// Opens a run's HTML reports in Positron's Viewer pane, with a button back
+// to the run's dashboard, and its trace in the Data Explorer.
 
 import * as fs from "fs";
 import * as vscode from "vscode";
 import type { PositronApi } from "@posit-dev/positron";
 
+import type { HtmlViewer } from "./htmlViewer";
 import { registerCommand } from "./log";
 import { withRun } from "./select";
 import type { Run, RunStore } from "./store";
@@ -19,8 +20,9 @@ const TITLES: Record<Report, string> = {
 
 export function activateReports(
   context: vscode.ExtensionContext,
-  api: PositronApi,
-  store: RunStore
+  _api: PositronApi,
+  store: RunStore,
+  viewer: HtmlViewer
 ) {
   const open = (kind: Report) => (node?: unknown) =>
     withRun(store, node, (run) => openReport(run, kind));
@@ -32,7 +34,16 @@ export function activateReports(
       );
       return;
     }
-    api.window.previewHtml(file);
+    viewer.show({
+      file,
+      title: `${TITLES[kind][0].toUpperCase()}${TITLES[kind].slice(1)}: ${run.record.runName}`,
+      backLabel: `\u2190 ${run.record.runName}`,
+      onBack: () =>
+        vscode.commands.executeCommand(
+          "nextflow.positron.runs.showRunDashboard",
+          { kind: "run", run }
+        )
+    });
   };
   context.subscriptions.push(
     registerCommand("nextflow.positron.runs.openReport", open("report")),

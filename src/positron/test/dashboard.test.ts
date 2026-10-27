@@ -13,6 +13,7 @@ import {
   readTaskDir,
   sectionOrder
 } from "../runs/dashboard/taskFiles";
+import { pageWithBackButton } from "../runs/htmlPage";
 
 const fixture = (name: string) =>
   fs.readFileSync(path.join("src/positron/test/fixtures", name), "utf8");
@@ -243,4 +244,49 @@ test("renders a run's dashboard and escapes what it shows", () => {
   assert.match(html, /Process &lt;FASTQC&gt; failed/);
   assert.match(html, /data-report="report"/);
   assert.doesNotMatch(html, /data-report="dag"/);
+});
+
+test("an HTML page gets a way back, without Positron's webview defaults", () => {
+  const page =
+    '<html><head><title>r</title></head><body><a href="#tasks">Tasks</a>' +
+    '<img src="plot.png"><img src="data:image/png;base64,AAA"><script src="https://cdn.example/x.js"></script>' +
+    '<link rel="stylesheet" href="style/report.css"><script>const s = "<head></body>";</script>' +
+    "<main>report</main></body></html>";
+  const html = pageWithBackButton(page, {
+    backLabel: 'main <"run">',
+    resolve: (relative) => `https://webview/dir/${relative}`
+  });
+  // the reset comes first in the real head, the button before the last </body>
+  assert.ok(
+    html.startsWith('<html><head><style id="nextflow-positron-reset">')
+  );
+  assert.ok(
+    html.indexOf("nextflow-positron-back") > html.indexOf("<main>report</main>")
+  );
+  assert.ok(html.endsWith("</body></html>"));
+  assert.match(html, /postMessage\(\{ type: "back" \}\)/);
+  assert.ok(html.includes("main &#60;&#34;run&#34;&#62;"));
+  // files next to the page load from the webview; links, data and remote URLs stay
+  assert.ok(html.includes('src="https://webview/dir/plot.png"'));
+  assert.ok(html.includes('href="https://webview/dir/style/report.css"'));
+  assert.ok(html.includes('href="#tasks"'));
+  assert.ok(html.includes('src="data:image/png;base64,AAA"'));
+  assert.ok(html.includes('src="https://cdn.example/x.js"'));
+});
+
+test("the DAG draws with the bundled mermaid", () => {
+  const dag = fs.readFileSync(
+    path.join(__dirname, "../src/positron/test/fixtures/dag.html"),
+    "utf8"
+  );
+  const html = pageWithBackButton(dag, {
+    backLabel: "back",
+    mermaidSrc: "https://webview/media/mermaid.min.js"
+  });
+  assert.ok(!html.includes("cdn.jsdelivr.net"));
+  assert.match(
+    html,
+    /<script src="https:\/\/webview\/media\/mermaid\.min\.js"><\/script>\n<script>\s*mermaid\.initialize\(/
+  );
+  assert.match(html, /<pre class="mermaid"/);
 });
