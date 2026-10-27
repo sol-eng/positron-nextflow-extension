@@ -22,7 +22,6 @@ export type RunEnvironment = {
   /** the events plugin with its version, or the setting if none is installed */
   eventsPlugin: string;
   eventsPluginInstalled: boolean;
-  launcherCli: string;
   /** set inside a Posit Workbench session */
   inWorkbench: boolean;
   problems: string[];
@@ -88,7 +87,6 @@ async function resolve(): Promise<RunEnvironment> {
     java,
     eventsPlugin: eventsPlugin ?? eventsSetting,
     eventsPluginInstalled: eventsPlugin !== undefined,
-    launcherCli: runSetting("launcherCli", "posit-workbench-nf-launcher"),
     inWorkbench: !!(env.RS_SERVER_URL || env.POSIT_PRODUCT),
     problems
   };

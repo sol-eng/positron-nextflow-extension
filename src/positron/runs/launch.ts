@@ -4,13 +4,9 @@
 import * as path from "path";
 import * as vscode from "vscode";
 
-import type { DriverJobOptions } from "./driverJob";
-import {
-  execFile,
-  nextflowConfig,
-  runSetting,
-  type RunEnvironment
-} from "./env";
+import { workbenchApi, type DriverJobOptions } from "./driverJob";
+import type { Cluster } from "./workbenchApi";
+import { nextflowConfig, runSetting, type RunEnvironment } from "./env";
 import {
   formatParams,
   parseParams,
@@ -25,8 +21,6 @@ export type LaunchPlan = {
   /** run the driver as a Workbench job with these options, else locally */
   driver?: DriverJobOptions;
 };
-
-type Cluster = { name: string; resourceProfiles: string[] };
 
 const lastConfigKey = (script: string) => `nextflow.positron.launch:${script}`;
 
@@ -91,27 +85,27 @@ export async function pickLaunch(
   return { config, declaredPlugins, driver };
 }
 
-let launcherWorks: Promise<boolean> | undefined;
+let workbenchWorks: Promise<boolean> | undefined;
 
 /**
- * A driver job can be submitted from a Workbench session whose launcher CLI
- * answers. The job then runs with Workbench credentials of its own.
+ * A driver job can be submitted from a Workbench session whose credentials
+ * the Workbench API accepts. The job then runs with Workbench credentials of
+ * its own.
  */
 export function driverJobAvailable(
   environment: RunEnvironment
 ): Promise<boolean> {
   if (!environment.inWorkbench) return Promise.resolve(false);
-  launcherWorks ??= execFile(environment.launcherCli, ["whoami", "--json"], {
-    env: environment.env,
-    timeout: 30000
-  }).then(
-    () => true,
-    () => {
-      launcherWorks = undefined;
-      return false;
-    }
-  );
-  return launcherWorks;
+  workbenchWorks ??= Promise.resolve()
+    .then(() => workbenchApi(environment).whoami())
+    .then(
+      () => true,
+      () => {
+        workbenchWorks = undefined;
+        return false;
+      }
+    );
+  return workbenchWorks;
 }
 
 /** The driver job's options from the settings, given its cluster. */
@@ -385,18 +379,10 @@ export async function listClusters(
   environment: RunEnvironment
 ): Promise<Cluster[] | undefined> {
   try {
-    const output = await execFile(
-      environment.launcherCli,
-      ["clusters", "--json"],
-      {
-        env: environment.env,
-        timeout: 30000
-      }
-    );
-    return JSON.parse(output);
+    return await workbenchApi(environment).clusters();
   } catch (e) {
     vscode.window.showWarningMessage(
-      `Could not list Workbench clusters with \`${environment.launcherCli}\`; using the pipeline's setting. ${e}`
+      `Could not list Workbench clusters; using the pipeline's setting. ${e instanceof Error ? e.message : e}`
     );
     return undefined;
   }

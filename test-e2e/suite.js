@@ -29,6 +29,32 @@ async function waitFor(runName, done, timeoutMs) {
 
 const node = (run) => ({ kind: "run", run: { files: { dir: run.dir } } });
 
+/** Call the stand-in Workbench API directly, e.g. its debug_calls. */
+function callFake(method) {
+  const http = require("http");
+  const body = JSON.stringify({ method, kwparams: {} });
+  return new Promise((resolve, reject) => {
+    const req = http.request(
+      `${process.env.RS_SERVER_ADDRESS}/api/${method}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Content-Length": Buffer.byteLength(body),
+          "X-RS-Session-Server-RPC-Cookie": process.env.RS_SESSION_RPC_COOKIE
+        }
+      },
+      (res) => {
+        let text = "";
+        res.on("data", (c) => (text += c));
+        res.on("end", () => resolve(JSON.parse(text).result));
+      }
+    );
+    req.on("error", reject);
+    req.end(body);
+  });
+}
+
 exports.run = async function () {
   const script = path.join(
     vscode.workspace.workspaceFolders[0].uri.fsPath,
@@ -132,6 +158,73 @@ exports.run = async function () {
       listed.ok &&
         JSON.parse(listed.result).some((r) => r.runName === failing.runName)
     );
+
+    // the Nextflow driver as a Workbench job, against test-e2e/fake_workbench.py
+    // (which runs it as a local process): submitted, followed and stopped
+    // through the Workbench API
+    const config = vscode.workspace.getConfiguration("nextflow.run");
+    await config.update("driver", "job", vscode.ConfigurationTarget.Global);
+    await sleep(500);
+    const headless = await vscode.commands.executeCommand(
+      "nextflow.positron.runs.launchConfig",
+      { script }
+    );
+    check(
+      "a headless run is submitted as a Workbench job",
+      headless && headless.driverJobId,
+      headless
+    );
+    const headlessDone = await waitFor(
+      headless.runName,
+      (r) => !active(r),
+      240000
+    );
+    check("the headless run succeeds", headlessDone.status === "succeeded", {
+      status: headlessDone.status,
+      error: headlessDone.errorMessage
+    });
+    const slow = await vscode.commands.executeCommand(
+      "nextflow.positron.runs.launchConfig",
+      { script, params: [["sleep", "120"]] }
+    );
+    await waitFor(slow.runName, (r) => r.status === "running", 120000);
+    await vscode.commands.executeCommand(
+      "nextflow.positron.runs.stop",
+      node(slow)
+    );
+    const stoppedRun = await waitFor(slow.runName, (r) => !active(r), 120000);
+    const calls = await callFake("debug_calls");
+    const launches = calls
+      .filter((c) => c.method === "launch_job")
+      .map((c) => c.kwparams.job);
+    const stops = calls
+      .filter((c) => c.method === "stop_job")
+      .map((c) => c.kwparams);
+    check(
+      "driver jobs are launched with their spec",
+      launches.length === 2 &&
+        launches.every(
+          (j) =>
+            j.name.startsWith("nf-driver-") &&
+            j.exe === "/bin/bash" &&
+            j.args[0].endsWith("/driver.sh") &&
+            j.cluster === "Local"
+        ),
+      launches
+    );
+    check(
+      "a stopped headless run is stopped gracefully",
+      stoppedRun.status === "stopped" &&
+        stops.some(
+          (s) => s.job_id === slow.driverJobId && s.force_quit === false
+        ),
+      { status: stoppedRun.status, stops }
+    );
+    check(
+      "job status comes from the Workbench API",
+      calls.some((c) => c.method === "get_session")
+    );
+    await config.update("driver", undefined, vscode.ConfigurationTarget.Global);
   } catch (e) {
     check("no exception", false, String((e && e.stack) || e));
   }

@@ -1,5 +1,6 @@
 // The pipeline test-e2e/suite.js drives inside Positron.
 params.fail = false
+params.sleep = 0
 
 process SAY {
   input: val x
@@ -12,6 +13,7 @@ process SAY {
     """
   else
     """
+    sleep ${params.sleep}
     echo hello ${x} > out_${x}.txt
     """
 }

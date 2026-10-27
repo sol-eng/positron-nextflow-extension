@@ -2,6 +2,7 @@
 // view.
 
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 import * as vscode from "vscode";
 
@@ -14,7 +15,12 @@ import {
   runSetting,
   type RunEnvironment
 } from "./env";
-import { cancelJobs, stopDriverJob, submitDriverJob } from "./driverJob";
+import {
+  cancelJobs,
+  stopDriverJob,
+  submitDriverJob,
+  workbenchApi
+} from "./driverJob";
 import {
   driverJobAvailable,
   driverOptions,
@@ -444,7 +450,7 @@ async function killRun(store: RunStore, run: Run) {
   }
   const cancel = "Cancel Jobs";
   const next = await vscode.window.showWarningMessage(
-    `${remote.length} task job(s) may still be running. Cancel them with ${(await runEnvironment()).launcherCli}?`,
+    `${remote.length} task job(s) may still be running. Cancel their Workbench jobs?`,
     cancel
   );
   if (next === cancel) await killJobs(remote.map((t) => t.task.nativeId!));
@@ -475,15 +481,13 @@ async function isLocalTask(task: TaskState): Promise<boolean> {
 }
 
 async function killJobs(ids: string[]) {
-  const environment = await runEnvironment();
   try {
-    await execFile(environment.launcherCli, ["kill", ...ids], {
-      env: environment.env,
-      timeout: 60000
-    });
+    await cancelJobs(await runEnvironment(), ids);
     vscode.window.setStatusBarMessage(`Cancelled ${ids.length} job(s).`, 5000);
   } catch (e) {
-    vscode.window.showErrorMessage(`Failed to cancel jobs: ${e}`);
+    vscode.window.showErrorMessage(
+      `Failed to cancel jobs: ${e instanceof Error ? e.message : e}`
+    );
   }
 }
 
@@ -830,13 +834,14 @@ async function showDiagnostics() {
     `PATH: ${environment.env.PATH}`
   ];
   try {
-    const whoami = await execFile(environment.launcherCli, ["whoami"], {
-      env: environment.env,
-      timeout: 30000
-    });
-    lines.push(`Launcher (${environment.launcherCli}): ${whoami.trim()}`);
+    const { auth, server } = await workbenchApi(environment).whoami();
+    lines.push(
+      `Workbench API: ${os.userInfo().username} via ${auth} on ${server}`
+    );
   } catch (e) {
-    lines.push(`Launcher (${environment.launcherCli}): unavailable (${e})`);
+    lines.push(
+      `Workbench API: unavailable (${e instanceof Error ? e.message : e})`
+    );
   }
   if (environment.problems.length)
     lines.push("", "Problems:", ...environment.problems.map((p) => `- ${p}`));

@@ -941,7 +941,8 @@
         "nextflow.run.launcherCli": {
           "type": "string",
           "default": "posit-workbench-nf-launcher",
-          "markdownDescription": "The Posit Workbench launcher CLI, used to list clusters and cancel task jobs."
+          "markdownDescription": "No longer used: the extension calls the Workbench API itself.",
+          "markdownDeprecationMessage": "No longer used: the extension calls the Workbench API itself."
         },
         "nextflow.run.confirm": {
           "type": "boolean",

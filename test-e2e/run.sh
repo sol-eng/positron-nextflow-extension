@@ -18,12 +18,22 @@ cat >"$tmp/user/User/settings.json" <<JSON
   "nextflow.java.home": "$JAVA_HOME",
   "nextflow.run.confirm": false,
   "nextflow.run.driver": "local",
+  "nextflow.run.headless.cluster": "Local",
   "nextflow.telemetry.enabled": false,
   "workbench.startupEditor": "none",
   "telemetry.telemetryLevel": "off"
 }
 JSON
 export E2E_RESULT="$tmp/result.json"
+# a stand-in for the Workbench API, presented to the extension as this session's
+# server, for the runs whose Nextflow driver is a Workbench job
+python3 "$here/fake_workbench.py" >"$tmp/fake-url" &
+fake_pid=$!
+disown "$fake_pid"
+trap 'kill "$fake_pid" 2>/dev/null; rm -rf "$tmp"' EXIT
+for _ in $(seq 50); do [ -s "$tmp/fake-url" ] && break; sleep 0.1; done
+export POSIT_PRODUCT=WORKBENCH RS_SERVER_ADDRESS="$(cat "$tmp/fake-url")" RS_SESSION_RPC_COOKIE=fake-cookie
+unset PWB_SESSION_RUNTIME_DIR WORKBENCH_SERVER WORKBENCH_API_KEY
 # built-in extensions may write logs into the current directory
 cd "$tmp"
 "$editor" --user-data-dir "$tmp/user" --extensions-dir "$tmp/extensions" \

@@ -8,7 +8,6 @@ import {
   buildDriverScript,
   buildRunArgs,
   orphanedJobIds,
-  parseJobStatus,
   pickEventsPlugin,
   resolveDriverMode,
   buildRunConfig,
@@ -336,16 +335,6 @@ test("builds a driver script that runs without a HOME, as in a job container", (
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
-});
-
-test("reads a driver job's state from launcher status output", () => {
-  const output = "11 RUNNING\n42 PENDING\n43 HOLD\n44 DONE\n45 ERROR\n";
-  assert.equal(parseJobStatus(output, "11"), "running");
-  assert.equal(parseJobStatus(output, "42"), "queued");
-  assert.equal(parseJobStatus(output, "43"), "queued");
-  assert.equal(parseJobStatus(output, "44"), "ended");
-  assert.equal(parseJobStatus(output, "45"), "ended");
-  assert.equal(parseJobStatus(output, "99"), "missing");
 });
 
 test("chooses where the driver runs", () => {

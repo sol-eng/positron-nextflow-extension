@@ -4,6 +4,13 @@ All notable changes to Positron Nextflow are documented here. See [Keep a Change
 
 Positron Nextflow is a fork of the [Nextflow extension for VS Code](https://github.com/nextflow-io/vscode-language-nextflow). Each release lists the upstream revision it is based on; see upstream's [changelog](https://github.com/nextflow-io/vscode-language-nextflow/blob/main/CHANGELOG.md) for the changes in those releases.
 
+## [Unreleased]
+
+### Changed
+
+- The extension talks to the Workbench API itself (`workbenchApi.ts`, Node's http/https) instead of running `posit-workbench-nf-launcher`: to list clusters, check credentials, submit, follow and stop headless driver jobs, and cancel task jobs. Stop always stops a driver job gracefully now. `nextflow.run.launcherCli` is no longer used.
+- With nf-workbench 0.4.0, which calls the Workbench API itself too, running pipelines on Workbench needs no launcher CLI and no Python environment.
+
 ## [0.2.2] - 2026-10-27
 
 Based on upstream [1.8.1](https://github.com/nextflow-io/vscode-language-nextflow/releases/tag/v1.8.1), at [`c149b5f`](https://github.com/nextflow-io/vscode-language-nextflow/commit/c149b5f), as 0.2.1 was.
